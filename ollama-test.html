@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ollama AI Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            background: #f9f9f9;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        button:disabled {
+            background: #cccccc;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success { background: #dff0d8; color: #3c763d; }
+        .error { background: #f2dede; color: #a94442; }
+        .loading { background: #d9edf7; color: #31708f; }
+    </style>
+</head>
+<body>
+    <h1>Ollama AI Test</h1>
+    <p>Test the connection to your local Ollama server</p>
+    
+    <div>
+        <label for="prompt">Enter your prompt:</label><br>
+        <input type="text" id="prompt" value="Tell me a short motivational quote for a workout" style="width: 100%; padding: 10px; margin: 10px 0;">
+    </div>
+    
+    <div>
+        <button id="testBtn">Test Ollama Connection</button>
+        <button id="clearBtn">Clear Output</button>
+    </div>
+    
+    <div id="status" class="status">Status: Ready</div>
+    
+    <h3>Output:</h3>
+    <div id="output">Response will appear here...</div>
+
+    <script>
+        const testBtn = document.getElementById('testBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const output = document.getElementById('output');
+        const statusDiv = document.getElementById('status');
+        const promptInput = document.getElementById('prompt');
+        
+        function setStatus(message, type = '') {
+            statusDiv.textContent = `Status: ${message}`;
+            statusDiv.className = 'status ' + type;
+        }
+        
+        async function testOllama() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                setStatus('Please enter a prompt', 'error');
+                return;
+            }
+            
+            testBtn.disabled = true;
+            setStatus('Testing Ollama connection...', 'loading');
+            output.textContent = 'Testing connection to Ollama server via proxy...\n\n';
+            
+            // Helper function to make API calls through our local proxy
+            const apiFetch = async (endpoint, options = {}) => {
+                // Ensure endpoint starts with a slash
+                const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+                const url = `http://localhost:3000/api${normalizedEndpoint}`;
+                
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                };
+                
+                try {
+                    const response = await fetch(url, {
+                        ...options,
+                        headers,
+                        mode: 'cors',
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText || 'No error details'}`);
+                    }
+                    
+                    return response;
+                } catch (error) {
+                    console.error('API call failed:', error);
+                    throw new Error(`Network error: ${error.message}`);
+                }
+            };
+            
+            try {
+                // First test if server is reachable
+                output.textContent += 'Attempting direct connection...\n';
+                let checkResponse;
+                
+                try {
+                    checkResponse = await apiFetch('/api/tags', { method: 'GET' });
+                    if (!checkResponse.ok) {
+                        throw new Error(`Server returned status: ${checkResponse.status}`);
+                    }
+                } catch (directError) {
+                    if (!useProxy) {
+                        output.textContent += 'Direct connection failed, trying with CORS proxy...\n\n';
+                        return testOllama(true); // Retry with proxy
+                    }
+                    throw directError;
+                }
+                
+                const models = await checkResponse.json();
+                output.textContent += '✓ Successfully connected to Ollama server\n';
+                output.textContent += `Available models: ${models.models ? models.models.map(m => m.name).join(', ') : 'None'}\n\n`;
+                
+                // Now test the Gemma model
+                setStatus('Testing Gemma model...', 'loading');
+                output.textContent += 'Sending request to Gemma model...\n';
+                
+                const startTime = Date.now();
+                const response = await apiFetch('/api/generate', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        model: 'gemma:2b',
+                        prompt: prompt,
+                        stream: false
+                    })
+                });
+                
+                const responseTime = (Date.now() - startTime) / 1000;
+                
+                if (!response.ok) {
+                    const errorData = await response.text().catch(() => 'No error details');
+                    throw new Error(`HTTP error! status: ${response.status}, details: ${errorData}`);
+                }
+                
+                const data = await response.json();
+                output.textContent += `✓ Got response in ${responseTime.toFixed(2)}s\n\n`;
+                output.textContent += 'Response:\n' + (data.response || 'No response content');
+                setStatus('Successfully received response from Ollama!', 'success');
+                
+            } catch (error) {
+                output.textContent = `Error: ${error.message}\n\nMake sure Ollama is running and the API is accessible at http://localhost:11434`;
+                setStatus('Error connecting to Ollama', 'error');
+                console.error('Ollama API Error:', error);
+            } finally {
+                testBtn.disabled = false;
+            }
+        }
+        
+        function clearOutput() {
+            output.textContent = 'Response will appear here...';
+            setStatus('Ready');
+        }
+        
+        testBtn.addEventListener('click', testOllama);
+        clearBtn.addEventListener('click', clearOutput);
+        
+        // Allow pressing Enter in the input to submit
+        promptInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                testOllama();
+            }
+        });
+    </script>
+</body>
+</html>

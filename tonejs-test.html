@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tone.js HIIT Timer Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 5px;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #workoutBtn { background: #e74c3c; color: white; }
+        #restBtn { background: #3498db; color: white; }
+        #completeBtn { background: #2ecc71; color: white; }
+        #countdownBtn { background: #9b59b6; color: white; }
+        #drumLoopBtn { background: #f39c12; color: white; }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tone.js HIIT Timer Demo</h1>
+    <p>Test different sounds using Tone.js for your HIIT Timer</p>
+    
+    <div id="status">Click 'Start Audio' to begin</div>
+    
+    <div class="button-container">
+        <button id="startBtn">Start Audio</button>
+        <button id="workoutBtn" disabled>Workout Start</button>
+        <button id="restBtn" disabled>Rest Start</button>
+        <button id="completeBtn" disabled>Set Complete</button>
+        <button id="countdownBtn" disabled>3-2-1 Countdown</button>
+        <button id="drumLoopBtn" disabled>Drum Loop (10s)</button>
+    </div>
+
+    <script>
+        // Initialize Tone.js synths
+        const workSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+        const restSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+        const completeSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+        const drumSynth = new Tone.MembraneSynth().toDestination();
+        
+        // Set up drum loop
+        const drumLoop = new Tone.Loop(time => {
+            drumSynth.triggerAttackRelease("A1", "8n", time);
+        }, "4n");
+        
+        // Set up sounds
+        function setupSounds() {
+            // Workout start sound (high ping)
+            workSynth.volume.value = -10;
+            
+            // Rest start sound (low ping)
+            restSynth.volume.value = -10;
+            
+            // Complete sound (chime)
+            completeSynth.volume.value = -8;
+        }
+        
+        // Audio functions
+        function playWorkoutStart() {
+            workSynth.triggerAttackRelease("C6", "8n");
+            updateStatus("Workout started!");
+        }
+        
+        function playRestStart() {
+            restSynth.triggerAttackRelease("C4", "8n");
+            updateStatus("Rest period started");
+        }
+        
+        function playComplete() {
+            completeSynth.triggerAttackRelease("C5", "8n");
+            completeSynth.triggerAttackRelease("G4", "8n", "+0.1");
+            completeSynth.triggerAttackRelease("C5", "8n", "+0.2");
+            updateStatus("Set complete! Great job!");
+        }
+        
+        async function playCountdown() {
+            updateStatus("Starting countdown...");
+            const countSynth = new Tone.Synth().toDestination();
+            
+            await countSynth.triggerAttackRelease("G4", "8n");
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await countSynth.triggerAttackRelease("G4", "8n");
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await countSynth.triggerAttackRelease("G4", "8n");
+            await new Promise(resolve => setTimeout(resolve, 300));
+            await countSynth.triggerAttackRelease("C5", "8n");
+            
+            updateStatus("GO!");
+            playWorkoutStart();
+        }
+        
+        function toggleDrumLoop() {
+            if (drumLoop.state === "started") {
+                drumLoop.stop();
+                updateStatus("Drum loop stopped");
+                drumLoopBtn.textContent = "Start Drum Loop (10s)";
+            } else {
+                drumLoop.start(0);
+                updateStatus("Drum loop started - will stop after 10 seconds");
+                drumLoopBtn.textContent = "Stop Drum Loop";
+                
+                // Auto-stop after 10 seconds
+                setTimeout(() => {
+                    if (drumLoop.state === "started") {
+                        drumLoop.stop();
+                        updateStatus("Drum loop finished");
+                        drumLoopBtn.textContent = "Start Drum Loop (10s)";
+                    }
+                }, 10000);
+            }
+        }
+        
+        // UI functions
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        function enableButtons() {
+            document.querySelectorAll('button:not(#startBtn)').forEach(btn => {
+                btn.disabled = false;
+            });
+        }
+        
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            await Tone.start();
+            setupSounds();
+            updateStatus("Audio ready! Try the buttons below.");
+            enableButtons();
+            document.getElementById('startBtn').textContent = "Audio Ready!";
+            document.getElementById('startBtn').disabled = true;
+        });
+        
+        document.getElementById('workoutBtn').addEventListener('click', playWorkoutStart);
+        document.getElementById('restBtn').addEventListener('click', playRestStart);
+        document.getElementById('completeBtn').addEventListener('click', playComplete);
+        document.getElementById('countdownBtn').addEventListener('click', playCountdown);
+        document.getElementById('drumLoopBtn').addEventListener('click', toggleDrumLoop);
+    </script>
+</body>
+</html>

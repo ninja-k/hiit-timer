@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dawn Chorus - Ambient Soundscape</title>
+    <!-- Load Tone.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <!-- Load our modules -->
+    <script type="module" src="dawn-chorus-audio.js"></script>
+    <script type="module" src="dawn-chorus-visual.js"></script>
+    <script type="module" src="dawn-chorus-controller.js"></script>
+    
+    <!-- Add a small script to handle audio context unlocking -->
+    <script>
+        // This helps unlock audio on mobile devices
+        function unlockAudio() {
+            if (Tone.context.state !== 'running') {
+                Tone.start();
+                console.log('Audio context started');
+                return true;
+            }
+            return false;
+        }
+        
+        // Initial unlock on first interaction
+        document.addEventListener('click', unlockAudio, { once: true });
+    </script>
+    <style>
+        :root {
+            --dawn-dark: #0f0c29;
+            --dawn-mid: #302b63;
+            --dawn-light: #6a7bd1;
+            --sun-color: #ff9d00;
+            --text-light: #f0f7f0;
+            --transition-time: 0.5s;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, var(--dawn-dark), var(--dawn-mid));
+            color: var(--text-light);
+            overflow: hidden;
+            position: relative;
+            transition: background-color 10s ease-in-out;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: rgba(15, 12, 41, 0.3);
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--sun-color);
+            text-shadow: 0 0 15px rgba(255, 157, 0, 0.3);
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        
+        .visualizer-container {
+            flex: 1;
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1rem 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 200px;
+            max-height: 40vh;
+        }
+        
+        #visualizer {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .sun {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, var(--sun-color), #ffd700);
+            border-radius: 50%;
+            box-shadow: 0 0 40px 15px rgba(255, 157, 0, 0.3);
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: bottom 60s linear, box-shadow 60s ease-in-out;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .control-group {
+            background: rgba(48, 43, 99, 0.5);
+            padding: 1.5rem 1rem;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(106, 123, 209, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .control-group:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .control-label {
+            display: block;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .knob {
+            width: 100%;
+            height: 120px;
+            position: relative;
+            margin: 0 auto;
+        }
+        
+        .knob-container {
+            width: 80px;
+            height: 100%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            outline: none;
+            transform: rotate(-90deg);
+            transform-origin: center;
+            position: relative;
+            left: 50%;
+            top: 50%;
+            margin: -40px 0 0 -40px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--sun-color);
+            cursor: pointer;
+            margin-left: -4px;
+            box-shadow: 0 0 10px rgba(255, 157, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+        
+        .knob-value {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+            color: var(--sun-color);
+            font-weight: bold;
+        }
+        
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        button {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 50px;
+            background: var(--dawn-light);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #stopButton {
+            background: #ff6b6b;
+        }
+        
+        .status {
+            text-align: center;
+            margin-top: 1rem;
+            min-height: 1.5rem;
+            color: var(--sun-color);
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+        
+        .time-display {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--sun-color);
+        }
+        
+        /* Medium screens */
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .knob {
+                height: 100px;
+            }
+            
+            input[type="range"] {
+                -webkit-appearance: slider-horizontal;
+                appearance: slider-horizontal;
+                width: 100%;
+                height: 40px;
+                transform: none;
+                left: 0;
+                top: 0;
+                margin: 0;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+                margin-top: 1rem;
+            }
+            
+            .sun {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .control-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            button {
+                margin: 0.5rem;
+                min-width: 120px;
+            }
+        }
+        
+        /* Small screens */
+        @media (max-width: 480px) {
+            .visualizer-container {
+                min-height: 150px;
+                max-height: 30vh;
+            }
+            
+            .controls {
+                margin: 0.5rem 0;
+            }
+            
+            .control-group {
+                padding: 0.75rem 0.5rem;
+            }
+            
+            .knob {
+                height: 80px;
+            }
+            
+            .control-buttons {
+                margin: 0.75rem 0;
+            }
+            
+            button {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
+            }
+            
+            .status {
+                margin-top: 0.5rem;
+            }
+        }
+        
+        /* Fix for very small screens */
+        @media (max-height: 600px) {
+            .container {
+                padding: 0.5rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+                margin: 0.5rem 0;
+            }
+            
+            .visualizer-container {
+                min-height: 120px;
+                margin: 0.5rem 0;
+            }
+            
+            .control-group {
+                padding: 0.5rem;
+            }
+            
+            .control-label {
+                margin-bottom: 0.5rem;
+            }
+            
+            .knob {
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="time-display" id="timeDisplay">Pre-dawn</div>
+        <h1>Dawn Chorus</h1>
+        
+        <div class="visualizer-container">
+            <canvas id="visualizer"></canvas>
+            <div class="sun" id="sun"></div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <span class="control-label">Pads</span>
+                <div class="knob">
+                    <div class="knob-container">
+                        <input type="range" id="pads" min="0" max="1" step="0.01" value="0.7">
+                    </div>
+                </div>
+                <span class="knob-value" id="pads-value">70%</span>
+            </div>
+            
+            <div class="control-group">
+                <span class="control-label">Chimes</span>
+                <div class="knob">
+                    <div class="knob-container">
+                        <input type="range" id="chimes" min="0" max="1" step="0.01" value="0.5">
+                    </div>
+                </div>
+                <span class="knob-value" id="chimes-value">50%</span>
+            </div>
+            
+            <div class="control-group">
+                <span class="control-label">Birds</span>
+                <div class="knob">
+                    <div class="knob-container">
+                        <input type="range" id="birds" min="0" max="1" step="0.01" value="0.3">
+                    </div>
+                </div>
+                <span class="knob-value" id="birds-value">30%</span>
+            </div>
+        </div>
+        
+        <div class="control-buttons">
+            <button id="playButton">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Begin Dawn
+            </button>
+            <button id="stopButton" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+                Pause
+            </button>
+        </div>
+        
+        <div class="status" id="status">Click anywhere to enable audio, then press Begin Dawn</div>
+    </div>
+</body>
+</html>

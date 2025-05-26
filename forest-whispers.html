@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forest Whispers - Ambient Soundscape</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script type="module" src="forest-whispers-audio.js"></script>
+    <script type="module" src="forest-whispers-visual.js"></script>
+    <script type="module" src="forest-whispers-controller.js"></script>
+    <style>
+        :root {
+            --forest-dark: #0d1f0e;
+            --forest-mid: #2a5c2b;
+            --forest-light: #5a9e5f;
+            --forest-highlight: #8bc34a;
+            --text-light: #f0f7f0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, var(--forest-dark), var(--forest-mid));
+            color: var(--text-light);
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 1rem;
+            background: rgba(13, 31, 14, 0.5);
+            backdrop-filter: blur(10px);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                padding: 2rem;
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--forest-highlight);
+            text-shadow: 0 0 10px rgba(139, 195, 74, 0.3);
+            font-size: 2.5rem;
+        }
+        
+        @media (max-height: 600px) {
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 0.5rem;
+            }
+        }
+        
+        .visualizer-container {
+            flex: 1;
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 1rem 0;
+            min-height: 200px;
+            max-height: 40vh;
+            border: 1px solid rgba(90, 158, 95, 0.3);
+            background: rgba(13, 31, 14, 0.3);
+            width: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            .visualizer-container {
+                min-height: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .visualizer-container {
+                min-height: 150px;
+                max-height: 30vh;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .visualizer-container {
+                min-height: 120px;
+                margin: 0.5rem 0;
+            }
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            width: 100%;
+            overflow: visible;
+        }
+        
+        @media (min-width: 640px) {
+            .controls {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .controls {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .control-group {
+            background: rgba(42, 92, 43, 0.3);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(90, 158, 95, 0.2);
+            min-width: 0; /* Prevents flex items from overflowing */
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        @media (max-width: 480px) {
+            .control-group {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .control-group {
+                padding: 0.5rem;
+            }
+        }
+        
+        .control-label {
+            display: block;
+            margin-bottom: 1rem;
+            color: var(--forest-highlight);
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-height: 600px) {
+            .control-label {
+                margin-bottom: 0.5rem;
+                font-size: 0.8rem;
+            }
+        }
+        
+        .knob {
+            width: 100%;
+            min-height: 100px;
+            position: relative;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem;
+        }
+        
+        @media (min-width: 480px) {
+            .knob {
+                min-height: 120px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .knob {
+                min-height: 80px;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .knob {
+                min-height: 60px;
+            }
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical;
+            width: 80px;
+            height: 100%;
+            background: transparent;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--forest-highlight);
+            cursor: pointer;
+            margin-left: -4px;
+            box-shadow: 0 0 10px rgba(139, 195, 74, 0.5);
+            transition: all 0.2s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 4px;
+            background: rgba(90, 158, 95, 0.3);
+            border-radius: 2px;
+        }
+        
+        .knob-value {
+            position: absolute;
+            bottom: -25px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+        
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.75rem;
+            margin: 1.5rem 0 1rem;
+            width: 100%;
+        }
+        
+        @media (max-width: 480px) {
+            .control-buttons {
+                margin: 1rem 0;
+                gap: 0.5rem;
+            }
+            
+            .control-buttons button {
+                min-width: 100px;
+                padding: 0.7rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .control-buttons {
+                margin: 0.75rem 0;
+            }
+            
+            .control-buttons button {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.85rem;
+                min-width: 90px;
+            }
+        }
+        
+        .control-buttons button {
+            flex: 1 1 auto;
+            min-width: 120px;
+            max-width: 200px;
+            padding: 0.8rem 1.2rem;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+        
+        button {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 50px;
+            background: var(--forest-highlight);
+            color: var(--forest-dark);
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #stopButton {
+            background: #c62828;
+            color: white;
+        }
+        
+        .status {
+            text-align: center;
+            margin-top: 1rem;
+            min-height: 1.5rem;
+            color: var(--forest-highlight);
+            font-style: italic;
+        }
+        
+        .time-display {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--forest-highlight);
+            z-index: 10;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .knob {
+                height: 100px;
+            }
+            
+            input[type="range"] {
+                -webkit-appearance: slider-horizontal;
+                appearance: slider-horizontal;
+                width: 100%;
+                height: 40px;
+                transform: rotate(0);
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .visualizer-container {
+                min-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Forest Whispers</h1>
+        
+        <div class="visualizer-container">
+            <div class="time-display" id="timeDisplay">Dawn</div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <span class="control-label">Canopy</span>
+                <div class="knob">
+                    <input type="range" id="canopy" min="0" max="1" step="0.01" value="0.7" orient="vertical">
+                    <span class="knob-value" id="canopy-value">70%</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <span class="control-label">Understory</span>
+                <div class="knob">
+                    <input type="range" id="understory" min="0" max="1" step="0.01" value="0.5" orient="vertical">
+                    <span class="knob-value" id="understory-value">50%</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <span class="control-label">Forest Floor</span>
+                <div class="knob">
+                    <input type="range" id="forestFloor" min="0" max="1" step="0.01" value="0.3" orient="vertical">
+                    <span class="knob-value" id="forestFloor-value">30%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-buttons">
+            <button id="playButton">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Begin Journey
+            </button>
+            <button id="stopButton" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+                Pause
+            </button>
+        </div>
+        
+        <div class="status" id="status">Ready to explore the forest...</div>
+    </div>
+</body>
+</html>

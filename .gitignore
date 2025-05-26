@@ -1,47 +1,4 @@
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Editor directories and files
-.idea/
-.vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Dependency directories
 node_modules/
-
-# Build outputs
-dist/
-build/
-
-# Environment variables
-.env
-.env.local
-
-# Logs
-logs
+.DS_Store
 *.log
-
-# Chrome extension specific
-*.pem
-*.crx
-*.pem
-*.p12
-*.key
-*.csr
-*.crt
-
-# Local development
-.local-*
-
-# Debug logs from Chrome
-debug.log
+.env

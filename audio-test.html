@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HIIT Timer Audio Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #startWorkout {
+            background-color: #e74c3c;
+            color: white;
+        }
+        #startRest {
+            background-color: #3498db;
+            color: white;
+        }
+        #completeSet {
+            background-color: #2ecc71;
+            color: white;
+        }
+        #countdown {
+            font-size: 24px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>HIIT Timer Audio Test</h1>
+    <p>Click the buttons to test different sounds for your HIIT Timer</p>
+    
+    <div id="countdown">Ready to start!</div>
+    
+    <div class="button-container">
+        <button id="startWorkout">Workout Start (High Beep)</button>
+        <button id="startRest">Rest Start (Low Beep)</button>
+        <button id="completeSet">Set Complete (Success Chime)</button>
+        <button id="countdownBtn">Test Countdown (3-2-1 Beeps)</button>
+    </div>
+
+    <script>
+        class AudioManager {
+            constructor() {
+                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            playTone(frequency, duration = 0.1, type = 'sine') {
+                const oscillator = this.audioCtx.createOscillator();
+                const gainNode = this.audioCtx.createGain();
+                
+                oscillator.type = type;
+                oscillator.frequency.value = frequency;
+                
+                gainNode.gain.setValueAtTime(0.5, this.audioCtx.currentTime);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioCtx.destination);
+                
+                oscillator.start();
+                oscillator.stop(this.audioCtx.currentTime + duration);
+                
+                return oscillator;
+            }
+
+            playWorkoutStart() {
+                // High-pitched beep
+                this.playTone(880, 0.2);
+            }
+
+            playRestStart() {
+                // Lower-pitched beep
+                this.playTone(440, 0.3);
+            }
+
+            playComplete() {
+                // Success chime
+                this.playTone(523.25, 0.1); // C
+                setTimeout(() => this.playTone(659.25, 0.1), 100); // E
+                setTimeout(() => this.playTone(783.99, 0.2), 200); // G
+            }
+
+            async playCountdown() {
+                const countdownEl = document.getElementById('countdown');
+                
+                for (let i = 3; i > 0; i--) {
+                    countdownEl.textContent = i;
+                    this.playTone(440 * (1 + (4 - i) * 0.2), 0.1);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                countdownEl.textContent = "GO!";
+                this.playWorkoutStart();
+                
+                setTimeout(() => {
+                    countdownEl.textContent = "Countdown finished!";
+                }, 500);
+            }
+        }
+
+        // Initialize audio manager
+        const audioManager = new AudioManager();
+
+        // Set up button event listeners
+        document.getElementById('startWorkout').addEventListener('click', () => {
+            audioManager.playWorkoutStart();
+        });
+
+        document.getElementById('startRest').addEventListener('click', () => {
+            audioManager.playRestStart();
+        });
+
+        document.getElementById('completeSet').addEventListener('click', () => {
+            audioManager.playComplete();
+        });
+
+        document.getElementById('countdownBtn').addEventListener('click', () => {
+            audioManager.playCountdown();
+        });
+
+        // Handle browser autoplay policy
+        document.body.addEventListener('click', () => {
+            if (audioManager.audioCtx.state === 'suspended') {
+                audioManager.audioCtx.resume();
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>
