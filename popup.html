@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HIIT Timer</title>
+  <script src="js/ai-service.js" defer></script>
   <style>
     body {
       width: 300px;
@@ -95,6 +96,27 @@
       border-radius: 4px;
       box-sizing: border-box;
     }
+    .ai-tip {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+      font-size: 0.9em;
+      display: none;
+    }
+    .ai-tip p {
+      margin: 0 0 10px 0;
+    }
+    .ai-tip button {
+      background: #3498db;
+      color: white;
+      padding: 4px 8px;
+      font-size: 0.8em;
+    }
+    .ai-tip button:hover {
+      background: #2980b9;
+    }
     .rounds-display {
       text-align: center;
       font-size: 1.1em;
@@ -110,7 +132,13 @@
     <div class="progress-container">
       <div class="progress-bar" id="progressBar"></div>
     </div>
-    <div class="rounds-display" id="roundsDisplay">Round 0/0</div>
+    <div class="rounds-display">Round: <span id="round">1</span>/<span id="totalRounds">4</span></div>
+    
+    <!-- AI Tip Section -->
+    <div class="ai-tip" id="aiTip">
+      <p>💡 <span id="aiTipText">Loading workout tip...</span></p>
+      <button id="newTipBtn">New Tip</button>
+    </div>
     
     <div class="controls">
       <button id="startBtn">Start</button>
@@ -133,5 +161,33 @@
     </div>
   </div>
   <script src="popup.js"></script>
+  <script>
+    // Show AI tip when the popup opens
+    document.addEventListener('DOMContentLoaded', () => {
+      const aiTip = document.getElementById('aiTip');
+      const aiTipText = document.getElementById('aiTipText');
+      const newTipBtn = document.getElementById('newTipBtn');
+      
+      // Show AI tip section
+      aiTip.style.display = 'block';
+      
+      // Get initial tip
+      if (window.AIService) {
+        AIService.getWorkoutTip().then(tip => {
+          aiTipText.textContent = tip;
+        });
+      }
+      
+      // New tip button
+      newTipBtn.addEventListener('click', () => {
+        aiTipText.textContent = 'Thinking...';
+        if (window.AIService) {
+          AIService.getWorkoutTip().then(tip => {
+            aiTipText.textContent = tip;
+          });
+        }
+      });
+    });
+  </script>
 </body>
 </html>
