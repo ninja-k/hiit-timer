@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HIIT Timer</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 16px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .timer-display {
+      font-size: 3em;
+      text-align: center;
+      font-weight: bold;
+      margin: 10px 0;
+      color: #2c3e50;
+    }
+    .phase-display {
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: 500;
+      color: #7f8c8d;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .progress-container {
+      height: 8px;
+      background: #ecf0f1;
+      border-radius: 4px;
+      margin: 10px 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #3498db;
+      transition: width 0.1s linear;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 15px 0;
+    }
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #startBtn {
+      background: #2ecc71;
+      color: white;
+    }
+    #startBtn:hover {
+      background: #27ae60;
+    }
+    #stopBtn {
+      background: #e74c3c;
+      color: white;
+      display: none;
+    }
+    #stopBtn:hover {
+      background: #c0392b;
+    }
+    .settings {
+      margin-top: 15px;
+      border-top: 1px solid #ecf0f1;
+      padding-top: 15px;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.9em;
+      color: #7f8c8d;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #bdc3c7;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .rounds-display {
+      text-align: center;
+      font-size: 1.1em;
+      margin: 10px 0;
+      color: #2c3e50;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="phase-display" id="phaseDisplay">Ready</div>
+    <div class="timer-display" id="timerDisplay">00:00</div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="rounds-display" id="roundsDisplay">Round 0/0</div>
+    
+    <div class="controls">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn">Stop</button>
+    </div>
+    
+    <div class="settings">
+      <div class="form-group">
+        <label for="workTime">Work Time (seconds)</label>
+        <input type="number" id="workTime" min="5" max="600" value="30">
+      </div>
+      <div class="form-group">
+        <label for="restTime">Rest Time (seconds)</label>
+        <input type="number" id="restTime" min="0" max="300" value="10">
+      </div>
+      <div class="form-group">
+        <label for="rounds">Rounds</label>
+        <input type="number" id="rounds" min="1" max="50" value="8">
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
