@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HIIT Timer AI Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        #output {
+            min-height: 100px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            background: #f9f9f9;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:disabled {
+            background: #cccccc;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>HIIT Timer AI Test</h1>
+    <p>Test Gemma 2B integration for workout tips</p>
+    
+    <div>
+        <button id="getTip">Get Workout Tip</button>
+        <button id="getExercise">Suggest Exercise</button>
+        <button id="getMotivation">Motivate Me</button>
+    </div>
+    
+    <div id="output">Click a button to generate content...</div>
+    
+    <div>
+        <p>Response time: <span id="time">-</span> seconds</p>
+    </div>
+
+    <script>
+        class AIService {
+            static async generate(prompt) {
+                const startTime = performance.now();
+                try {
+                    const response = await fetch('http://localhost:11434/api/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: "gemma:2b",
+                            prompt: prompt,
+                            stream: false,
+                            options: {
+                                temperature: 0.7,
+                                num_ctx: 512
+                            }
+                        })
+                    });
+                    const data = await response.json();
+                    const endTime = performance.now();
+                    return {
+                        response: data.response.trim(),
+                        time: ((endTime - startTime) / 1000).toFixed(2)
+                    };
+                } catch (error) {
+                    console.error("AI Error:", error);
+                    return {
+                        response: "Sorry, I couldn't connect to the AI service. Please try again later.",
+                        time: "Error"
+                    };
+                }
+            }
+        }
+
+        // UI Elements
+        const output = document.getElementById('output');
+        const timeEl = document.getElementById('time');
+        
+        // Button Handlers
+        document.getElementById('getTip').addEventListener('click', () => {
+            output.innerHTML = '<div class="loading">Getting your workout tip...</div>';
+            AIService.generate("Give a short, practical HIIT workout tip (max 2 sentences):")
+                .then(({response, time}) => {
+                    output.innerHTML = `💡 <strong>Workout Tip:</strong> ${response}`;
+                    timeEl.textContent = time;
+                });
+        });
+
+        document.getElementById('getExercise').addEventListener('click', () => {
+            output.innerHTML = '<div class="loading">Thinking of an exercise for you...</div>';
+            AIService.generate("Suggest one HIIT exercise (just the name and 1-2 word description):")
+                .then(({response, time}) => {
+                    output.innerHTML = `🏋️ <strong>Try this:</strong> ${response}`;
+                    timeEl.textContent = time;
+                });
+        });
+
+        document.getElementById('getMotivation').addEventListener('click', () => {
+            output.innerHTML = '<div class="loading">Finding some motivation for you...</div>';
+            AIService.generate("Give a short, energetic workout motivation (max 5 words):")
+                .then(({response, time}) => {
+                    output.innerHTML = `🔥 <strong>Motivation:</strong> ${response}`;
+                    timeEl.textContent = time;
+                });
+        });
+    </script>
+</body>
+</html>
