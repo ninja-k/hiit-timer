@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tone.js Music Maker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #startButton {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #startButton:hover {
+            background: #45a049;
+        }
+    </style>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background: #f5f5f5;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 5px;
+        }
+        #startBtn { background: #2ecc71; color: white; }
+        #stopBtn { background: #e74c3c; color: white; }
+        .track-controls { margin: 20px 0; }
+        .track {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 { color: #2c3e50; }
+        .slider-container {
+            margin: 10px 0;
+            text-align: left;
+            padding: 0 20px;
+        }
+        label { display: inline-block; width: 120px; }
+    </style>
+</head>
+<body>
+    <h1>Simple Music Maker</h1>
+    <p>Create a simple song with Tone.js</p>
+    
+    <div id="startScreen">
+        <button id="startButton">Start Audio</button>
+    </div>
+    
+    <div class="controls" style="display: none;">
+        <button id="startBtn">Start Music</button>
+        <button id="stopBtn" disabled>Stop Music</button>
+    </div>
+
+    <div class="track-controls">
+        <div class="track">
+            <h2>Pad</h2>
+            <div class="slider-container">
+                <label for="padVolume">Volume:</label>
+                <input type="range" id="padVolume" min="-60" max="0" value="-20" step="1">
+            </div>
+            <div class="slider-container">
+                <label for="padMute">Mute:</label>
+                <input type="checkbox" id="padMute">
+            </div>
+        </div>
+
+        <div class="track">
+            <h2>Pluck</h2>
+            <div class="slider-container">
+                <label for="pluckVolume">Volume:</label>
+                <input type="range" id="pluckVolume" min="-60" max="0" value="-15" step="1">
+            </div>
+            <div class="slider-container">
+                <label for="pluckMute">Mute:</label>
+                <input type="checkbox" id="pluckMute">
+            </div>
+        </div>
+
+        <div class="track">
+            <h2>Percussion</h2>
+            <div class="slider-container">
+                <label for="percVolume">Volume:</label>
+                <input type="range" id="percVolume" min="-60" max="0" value="-12" step="1">
+            </div>
+            <div class="slider-container">
+                <label for="percMute">Mute:</label>
+                <input type="checkbox" id="percMute">
+            </div>
+        </div>
+        <div class="track">
+            <h2>Drums</h2>
+            <div class="slider-container">
+                <label for="drumsVolume">Volume:</label>
+                <input type="range" id="drumsVolume" min="-60" max="0" value="-10" step="1">
+            </div>
+            <div class="slider-container">
+                <label for="drumsMute">Mute:</label>
+                <input type="checkbox" id="drumsMute">
+            </div>
+        </div>
+
+        <div class="track">
+            <h2>Bass</h2>
+            <div class="slider-container">
+                <label for="bassVolume">Volume:</label>
+                <input type="range" id="bassVolume" min="-60" max="0" value="-12" step="1">
+            </div>
+            <div class="slider-container">
+                <label for="bassMute">Mute:</label>
+                <input type="checkbox" id="bassMute">
+            </div>
+        </div>
+
+        <div class="track">
+            <h2>Melody</h2>
+            <div class="slider-container">
+                <label for="melodyVolume">Volume:</label>
+                <input type="range" id="melodyVolume" min="-60" max="0" value="-8" step="1">
+            </div>
+            <div class="slider-container">
+                <label for="melodyMute">Mute:</label>
+                <input type="checkbox" id="melodyMute">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio state management
+        let audioStarted = false;
+        let audioContext;
+        
+        // Initialize Tone.js with user interaction
+        async function initTone() {
+            try {
+                // Create a new AudioContext if one doesn't exist
+                if (!window.AudioContext && !window.webkitAudioContext) {
+                    throw new Error('Web Audio API not supported in this browser');
+                }
+                
+                // Initialize Tone.js with silent context
+                await Tone.start();
+                
+                // Explicitly resume the audio context
+                if (Tone.context.state === 'suspended') {
+                    await Tone.context.resume();
+                }
+                
+                // Set up audio context reference
+                audioContext = Tone.context;
+                
+                // Initialize audio nodes
+                await initAudioNodes();
+                
+                // Set initial volumes
+                setInitialVolumes();
+                
+                return true;
+                
+            } catch (error) {
+                console.error('Failed to initialize audio:', error);
+                throw error; // Re-throw to be caught by the caller
+            }
+        }
+        
+        // Start audio playback
+        async function startAudio() {
+            if (audioStarted) return;
+            
+            try {
+                // Start the transport
+                Tone.Transport.bpm.value = 120;
+                Tone.Transport.start();
+                
+                // Update UI
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                audioStarted = true;
+                
+            } catch (error) {
+                console.error('Failed to start audio:', error);
+                alert('Failed to start audio. Please check console for details.');
+            }
+        }
+        
+        // Audio nodes will be created after user interaction
+        let drumSynth, bassSynth, melodySynth, padSynth, pluckSynth, percussion, reverb, delay;
+        
+        async function initAudioNodes() {
+            try {
+                // Wait for worklets to load
+                await Tone.start();
+                await Tone.loaded();
+                
+                // Create effects first with proper wet/dry mix
+                reverb = new Tone.Reverb({
+                    decay: 2.5,
+                    wet: 0.5
+                });
+                
+                delay = new Tone.PingPongDelay({
+                    delayTime: "8n",
+                    feedback: 0.4,
+                    wet: 0.3
+                });
+                
+                // Create a volume node for the final output
+                const masterVolume = new Tone.Volume(0).toDestination();
+                
+                // Create instruments without connecting to destination yet
+                drumSynth = new Tone.MembraneSynth({
+                    pitchDecay: 0.05,
+                    octaves: 4,
+                    oscillator: { type: 'sine' }
+                });
+
+                bassSynth = new Tone.MonoSynth({
+                    oscillator: { type: 'sine' },
+                    envelope: {
+                        attack: 0.1,
+                        decay: 0.3,
+                        sustain: 0.4,
+                        release: 0.3
+                    }
+                });
+
+                melodySynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sawtooth' },
+                    envelope: {
+                        attack: 0.01,
+                        decay: 0.1,
+                        sustain: 0.3,
+                        release: 0.4
+                    }
+                });
+
+                // New instruments
+                padSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sine' },
+                    envelope: {
+                        attack: 2,
+                        decay: 1,
+                        sustain: 0.6,
+                        release: 2
+                    }
+                });
+
+                // Load PluckSynth worklet
+                try {
+                    await Tone.PluckSynth.getDefaults();
+                    pluckSynth = new Tone.PluckSynth({
+                        attackNoise: 1,
+                        dampening: 4000,
+                        resonance: 0.7
+                    });
+                } catch (e) {
+                    console.warn('PluckSynth not available, using alternative');
+                    pluckSynth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: 'sine' },
+                        envelope: {
+                            attack: 0.01,
+                            decay: 0.5,
+                            sustain: 0.1,
+                            release: 0.5
+                        }
+                    });
+                }
+
+
+                percussion = new Tone.MetalSynth({
+                    frequency: 200,
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.1,
+                        release: 0.01
+                    },
+                    harmonicity: 5.1,
+                    modulationIndex: 32,
+                    resonance: 4000,
+                    octaves: 1.5
+                });
+                
+                // Create effects for instruments
+                const pingPong = new Tone.PingPongDelay({
+                    delayTime: "8n",
+                    feedback: 0.3,
+                    wet: 0.2
+                });
+
+                const chorus = new Tone.Chorus(4, 2.5, 0.5);
+                chorus.start();
+                
+                // Create a channel for each instrument
+                const drumChannel = new Tone.Channel(-5).connect(masterVolume);
+                const bassChannel = new Tone.Channel(-8).connect(masterVolume);
+                const melodyChannel = new Tone.Channel(-6).connect(masterVolume);
+                const padChannel = new Tone.Channel(-12).connect(masterVolume);
+                const pluckChannel = new Tone.Channel(-10).connect(masterVolume);
+                const percChannel = new Tone.Channel(-10).connect(masterVolume);
+                
+                // Connect instruments to effects and channels
+                drumSynth.chain(drumChannel);
+                bassSynth.chain(delay, bassChannel);
+                melodySynth.chain(chorus, melodyChannel);
+                padSynth.chain(reverb, padChannel);
+                pluckSynth.chain(pingPong, pluckChannel);
+                percussion.chain(percChannel);
+                
+                // Add some reverb to drums and pluck
+                drumSynth.connect(reverb);
+                pluckSynth.connect(reverb);
+                
+                // Now that all audio nodes are created, set up sequences
+                createSequences();
+                setInitialVolumes();
+                
+                return true;
+            } catch (error) {
+                console.error('Error initializing audio nodes:', error);
+                return false;
+            }
+        }
+
+        // Create sequences
+        let drumLoop, bassLoop, melodyLoop, padLoop, pluckLoop, percLoop;
+        
+        function createSequences() {
+            if (!drumSynth || !bassSynth || !melodySynth || !padSynth || !pluckSynth || !percussion) {
+                console.error('Instruments not initialized');
+                return;
+            }
+            
+            // Clear any existing sequences
+            if (drumLoop) drumLoop.dispose();
+            if (bassLoop) bassLoop.dispose();
+            if (melodyLoop) melodyLoop.dispose();
+            if (padLoop) padLoop.dispose();
+            if (pluckLoop) pluckLoop.dispose();
+            if (percLoop) percLoop.dispose();
+            // Drum pattern (kick, snare, hi-hat)
+            const drumNotes = [
+                { time: '0:0', note: 'C1', duration: '8n' },
+                { time: '0:1', note: 'C1', duration: '8n' },
+                { time: '0:2', note: 'C1', duration: '8n' },
+                { time: '0:3', note: 'C1', duration: '8n' },
+                { time: '0:4', note: 'C1', duration: '8n' },
+                { time: '0:5', note: 'C1', duration: '8n' },
+                { time: '0:6', note: 'C1', duration: '8n' },
+                { time: '0:7', note: 'C1', duration: '8n' },
+                { time: '0:0:2', note: 'D1', duration: '16n' },
+                { time: '0:2:2', note: 'D1', duration: '16n' },
+                { time: '0:4:2', note: 'D1', duration: '16n' },
+                { time: '0:6:2', note: 'D1', duration: '16n' },
+                { time: '0:1:1', note: 'F#1', duration: '32n' },
+                { time: '0:3:1', note: 'F#1', duration: '32n' },
+                { time: '0:5:1', note: 'F#1', duration: '32n' },
+                { time: '0:7:1', note: 'F#1', duration: '32n' }
+            ];
+
+            // Bass line (in C minor)
+            const bassNotes = [
+                { time: '0:0', note: 'C2', duration: '4n' },
+                { time: '0:2', note: 'G2', duration: '4n' },
+                { time: '1:0', note: 'F2', duration: '4n' },
+                { time: '1:2', note: 'G2', duration: '4n' }
+            ];
+
+            // Melody (C minor pentatonic)
+            const melodyNotes = [
+                { time: '0:0', note: 'C4', duration: '8n' },
+                { time: '0:0:2', note: 'D4', duration: '8n' },
+                { time: '0:1', note: 'Eb4', duration: '8n' },
+                { time: '0:1:2', note: 'G4', duration: '8n' },
+                { time: '0:2', note: 'F4', duration: '8n' },
+                { time: '0:2:2', note: 'Eb4', duration: '8n' },
+                { time: '0:3', note: 'D4', duration: '8n' },
+                { time: '0:3:2', note: 'C4', duration: '8n' },
+                { time: '1:0', note: 'G4', duration: '8n' },
+                { time: '1:0:2', note: 'F4', duration: '8n' },
+                { time: '1:1', note: 'Eb4', duration: '8n' },
+                { time: '1:1:2', note: 'D4', duration: '8n' },
+                { time: '1:2', note: 'C4', duration: '4n' },
+                { time: '1:3', note: 'G3', duration: '4n' }
+            ];
+
+            // Pad chords (whole notes)
+            const padChords = [
+                { time: '0:0', note: ['C4', 'Eb4', 'G4'], duration: '1m' },
+                { time: '1:0', note: ['Bb3', 'D4', 'F4'], duration: '1m' },
+                { time: '2:0', note: ['Ab3', 'C4', 'Eb4'], duration: '1m' },
+                { time: '3:0', note: ['Bb3', 'D4', 'F4'], duration: '1m' }
+            ];
+
+            // Pluck pattern (arpeggio)
+            const pluckPattern = [
+                { time: '0:0', note: 'C4', duration: '8n' },
+                { time: '0:0:2', note: 'Eb4', duration: '8n' },
+                { time: '0:1', note: 'G4', duration: '8n' },
+                { time: '0:1:2', note: 'C5', duration: '8n' },
+                { time: '0:2', note: 'G4', duration: '8n' },
+                { time: '0:2:2', note: 'Eb4', duration: '8n' },
+                { time: '0:3', note: 'G4', duration: '8n' },
+                { time: '0:3:2', note: 'C4', duration: '8n' },
+                // Variation in second half
+                { time: '1:0', note: 'Bb3', duration: '8n' },
+                { time: '1:0:2', note: 'D4', duration: '8n' },
+                { time: '1:1', note: 'F4', duration: '8n' },
+                { time: '1:1:2', note: 'Bb4', duration: '8n' },
+                { time: '1:2', note: 'F4', duration: '8n' },
+                { time: '1:2:2', note: 'D4', duration: '8n' },
+                { time: '1:3', note: 'F4', duration: '8n' },
+                { time: '1:3:2', note: 'Bb3', duration: '8n' }
+            ];
+
+            // Percussion pattern
+            const percPattern = [
+                { time: '0:0:2', note: 'C5', duration: '16n' },
+                { time: '0:1:2', note: 'C5', duration: '16n' },
+                { time: '0:2:2', note: 'C5', duration: '16n' },
+                { time: '0:3:2', note: 'C5', duration: '16n' },
+                { time: '1:0:2', note: 'C5', duration: '16n' },
+                { time: '1:1:2', note: 'C5', duration: '16n' },
+                { time: '1:2:2', note: 'C5', duration: '16n' },
+                { time: '1:3:2', note: 'C5', duration: '16n' }
+            ];
+
+            // Create loops
+            drumLoop = new Tone.Part((time, note) => {
+                drumSynth.triggerAttackRelease(note.note, note.duration, time);
+            }, drumNotes).start(0);
+
+            bassLoop = new Tone.Part((time, note) => {
+                bassSynth.triggerAttackRelease(note.note, note.duration, time);
+            }, bassNotes).start(0);
+
+            melodyLoop = new Tone.Part((time, note) => {
+                melodySynth.triggerAttackRelease(note.note, note.duration, time);
+            }, melodyNotes).start(0);
+
+            padLoop = new Tone.Part((time, chord) => {
+                padSynth.triggerAttackRelease(chord.note, chord.duration, time);
+            }, padChords).start(0);
+
+            pluckLoop = new Tone.Part((time, note) => {
+                pluckSynth.triggerAttackRelease(note.note, note.duration, time);
+            }, pluckPattern).start(0);
+
+            percLoop = new Tone.Part((time, note) => {
+                percussion.triggerAttackRelease(note.note, note.duration, time);
+            }, percPattern).start(0);
+
+            // Set loops to repeat
+            const loops = [drumLoop, bassLoop, melodyLoop, padLoop, pluckLoop, percLoop];
+            loops.forEach(loop => {
+                loop.loop = true;
+                loop.loopEnd = '2m';
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const startScreen = document.getElementById('startScreen');
+            const startButton = document.getElementById('startButton');
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const controls = document.querySelector('.controls');
+            
+            // Hide controls initially
+            startBtn.disabled = true;
+            stopBtn.disabled = true;
+            
+            // Handle initial start button click
+            startButton.addEventListener('click', async () => {
+                try {
+                    // Initialize Tone.js
+                    await Tone.start();
+                    console.log('Audio is ready');
+                    
+                    // Hide start screen and show controls
+                    startScreen.style.display = 'none';
+                    controls.style.display = 'block';
+                    
+                    // Initialize audio nodes
+                    await initTone();
+                    
+                    // Set up volume controls
+                    setupVolumeControls();
+                    
+                    // Enable start button
+                    startBtn.disabled = false;
+                } catch (error) {
+                    console.error('Audio initialization failed:', error);
+                    alert('Failed to initialize audio. Please refresh and try again.');
+                }
+            });
+            
+            // Initialize audio when start button is clicked
+            startBtn.addEventListener('click', async () => {
+                try {
+                    startBtn.disabled = true;
+                    startBtn.textContent = 'Starting...';
+                    
+                    // Start the transport
+                    await Tone.start();
+                    Tone.Transport.start();
+                    
+                    // Update UI
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    audioStarted = true;
+                } catch (error) {
+                    console.error('Failed to start audio:', error);
+                    alert('Failed to start audio. Please try again.');
+                    startBtn.disabled = false;
+                    startBtn.textContent = 'Start Music';
+                }
+            });
+            
+            // Setup transport controls
+            startBtn.addEventListener('click', startAudio);
+            stopBtn.addEventListener('click', () => {
+                Tone.Transport.stop();
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                audioStarted = false;
+            });
+        });
+        
+        function setupVolumeControls() {
+            try {
+                // Check if all required synths are available
+                const synths = {
+                    'drums': drumSynth,
+                    'bass': bassSynth,
+                    'melody': melodySynth,
+                    'pad': padSynth,
+                    'pluck': pluckSynth,
+                    'perc': percussion
+                };
+                
+                // Volume control configuration with default values
+                const volumeConfigs = {
+                    'drums': { volume: -10 },
+                    'bass': { volume: -12 },
+                    'melody': { volume: -8 },
+                    'pad': { volume: -20 },
+                    'pluck': { volume: -15 },
+                    'perc': { volume: -12 }
+                };
+                
+                // Set up event listeners for each control
+                Object.entries(volumeConfigs).forEach(([name, config]) => {
+                    const synth = synths[name];
+                    if (!synth) {
+                        console.warn(`Synth for ${name} not available`);
+                        return;
+                    }
+                    
+                    const volumeSlider = document.getElementById(`${name}Volume`);
+                    const muteToggle = document.getElementById(`${name}Mute`);
+                    
+                    if (volumeSlider) {
+                        // Set initial volume
+                        volumeSlider.value = config.volume;
+                        synth.volume.value = config.volume;
+                        
+                        // Update volume when slider changes
+                        volumeSlider.addEventListener('input', (e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                                synth.volume.value = value;
+                                if (muteToggle) {
+                                    muteToggle.checked = false;
+                                    synth.mute = false;
+                                }
+                            }
+                        });
+                    }
+                    
+                    if (muteToggle) {
+                        // Initialize mute state
+                        muteToggle.checked = false;
+                        
+                        // Mute/unmute when checkbox changes
+                        muteToggle.addEventListener('change', (e) => {
+                            synth.mute = e.target.checked;
+                        });
+                    }
+                });
+                
+                console.log('Volume controls initialized');
+                return true;
+            } catch (error) {
+                console.error('Error setting up volume controls:', error);
+                return false;
+            }
+        }
+
+
+        // Set initial volumes (will be set when audio nodes are created)
+        function setInitialVolumes() {
+            try {
+                const volumes = [
+                    { synth: drumSynth, volume: -10 },
+                    { synth: bassSynth, volume: -12 },
+                    { synth: melodySynth, volume: -8 },
+                    { synth: padSynth, volume: -20 },
+                    { synth: pluckSynth, volume: -15 },
+                    { synth: percussion, volume: -12 }
+                ];
+                
+                volumes.forEach(({ synth, volume }) => {
+                    if (synth && typeof synth.volume !== 'undefined') {
+                        synth.volume.value = volume;
+                    }
+                });
+                
+                return true;
+            } catch (error) {
+                console.error('Error setting initial volumes:', error);
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>
