@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ambient Collection</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        :root {
+            --primary: #4a6bff;
+            --bg: #1a1a2e;
+            --card-bg: rgba(26, 26, 46, 0.7);
+            --text: #e6e6e6;
+            --text-secondary: #a8a8b3;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            margin: 0;
+            padding: 2rem;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #a8e6cf, #dcedc1);
+            -webkit-background-clip: text;
+            -moz-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -moz-text-fill-color: transparent;
+            color: transparent;
+        }
+        
+        .collection {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .track-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .track-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .track-title {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #a8e6cf;
+        }
+        
+        .track-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            margin-right: 0.5rem;
+        }
+        
+        button:hover {
+            background: #3a56cc;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #4a4a5a;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: var(--primary);
+            min-height: 1.2rem;
+        }
+        
+        .controls {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .knob-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .knob {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .knob label {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: center;
+            width: 100%;
+        }
+        
+        .knob-input {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 60px;
+            height: 30px;
+            background: #2a2a3a;
+            border-radius: 15px;
+            outline: none;
+            transform: rotate(-90deg);
+            cursor: ns-resize;
+            padding: 0 5px;
+            margin: 2rem 0;
+        }
+        
+        .knob-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .knob-input::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(74, 107, 255, 0.5);
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        label {
+            width: 80px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        input[type="range"] {
+            flex-grow: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background: #4a4a5a;
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+        
+        .visualizer {
+            width: 100%;
+            height: 80px;
+            margin-top: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+        }
+        
+        .now-playing {
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 15px rgba(74, 107, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Ambient Collection</h1>
+            <p>Generative soundscapes for focus and relaxation</p>
+        </header>
+        
+        <div class="collection" id="collection">
+            <!-- Tracks will be added here dynamically -->
+        </div>
+    </div>
+
+    <script>
+        // Track collection data
+        const tracks = [
+            {
+                id: 'garden',
+                title: 'Ambient Garden',
+                description: 'A generative ambient piece with evolving pads, gentle melodies, and organic textures. Perfect for relaxation and focus.',
+                bpm: 72,
+                duration: '∞',
+                tags: ['generative', 'ambient', 'evolving'],
+                init: initGardenTrack
+            },
+            // More tracks will be added here
+        ];
+        
+        // Current track state
+        let currentTrack = null;
+        let isPlaying = false;
+        
+        // Initialize the collection
+        document.addEventListener('DOMContentLoaded', () => {
+            const collectionEl = document.getElementById('collection');
+            
+            // Create track cards
+            tracks.forEach(track => {
+                const trackEl = document.createElement('div');
+                trackEl.className = 'track-card';
+                trackEl.id = `track-${track.id}`;
+                trackEl.innerHTML = `
+                    <h3 class="track-title">${track.title}</h3>
+                    <p class="track-description">${track.description}</p>
+                    <div class="track-meta">
+                        <span>BPM: ${track.bpm}</span> • 
+                        <span>Duration: ${track.duration}</span>
+                    </div>
+                    <div class="controls">
+                        <div class="control-buttons">
+                            <button class="play-button" data-track="${track.id}">Play</button>
+                            <button class="stop-button" data-track="${track.id}" disabled>Stop</button>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob">
+                                <input type="range" class="knob-input" id="${track.id}-ambience" min="0" max="1" step="0.01" value="0.7" data-param="ambience">
+                                <label>Ambience</label>
+                            </div>
+                            <div class="knob">
+                                <input type="range" class="knob-input" id="${track.id}-melody" min="0" max="1" step="0.01" value="0.5" data-param="melody">
+                                <label>Melody</label>
+                            </div>
+                            <div class="knob">
+                                <input type="range" class="knob-input" id="${track.id}-rhythm" min="0" max="1" step="0.01" value="0.3" data-param="rhythm">
+                                <label>Rhythm</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="status"></div>
+                    <div class="visualizer">
+                        <canvas id="visualizer-${track.id}"></canvas>
+                    </div>
+                `;
+                collectionEl.appendChild(trackEl);
+                
+                // Add event listeners
+                trackEl.querySelector('.play-button').addEventListener('click', () => toggleTrack(track.id));
+                trackEl.querySelector('.stop-button').addEventListener('click', stopTrack);
+            });
+            
+            // Initialize audio context on first interaction
+            document.body.addEventListener('click', () => {
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+            }, { once: true });
+        });
+        
+        // Track control functions
+        async function toggleTrack(trackId) {
+            const track = tracks.find(t => t.id === trackId);
+            if (!track) return;
+            
+            const trackEl = document.getElementById(`track-${trackId}`);
+            const playButton = trackEl.querySelector('.play-button');
+            const stopButton = trackEl.querySelector('.stop-button');
+            const statusEl = trackEl.querySelector('.status');
+            
+            if (currentTrack === trackId) {
+                // Toggle play/pause of current track
+                if (isPlaying) {
+                    Tone.Transport.pause();
+                    playButton.textContent = 'Resume';
+                    statusEl.textContent = 'Paused';
+                } else {
+                    await Tone.start();
+                    Tone.Transport.start();
+                    playButton.textContent = 'Pause';
+                    statusEl.textContent = 'Playing...';
+                }
+                isPlaying = !isPlaying;
+            } else {
+                // Stop current track and start new one
+                if (currentTrack) {
+                    stopTrack();
+                }
+                
+                // Update UI
+                document.querySelectorAll('.track-card').forEach(el => {
+                    el.classList.remove('now-playing');
+                    const btn = el.querySelector('.play-button');
+                    if (btn) btn.textContent = 'Play';
+                });
+                
+                trackEl.classList.add('now-playing');
+                playButton.textContent = 'Pause';
+                stopButton.disabled = false;
+                statusEl.textContent = 'Loading...';
+                
+                // Initialize and start the track
+                try {
+                    await track.init(trackEl);
+                    currentTrack = trackId;
+                    isPlaying = true;
+                    statusEl.textContent = 'Playing...';
+                } catch (error) {
+                    console.error('Error initializing track:', error);
+                    statusEl.textContent = 'Error initializing audio';
+                    playButton.textContent = 'Play';
+                    stopButton.disabled = true;
+                }
+            }
+        }
+        
+        function stopTrack() {
+            if (!currentTrack) return;
+            
+            Tone.Transport.stop();
+            Tone.Transport.cancel();
+            
+            const trackEl = document.getElementById(`track-${currentTrack}`);
+            if (trackEl) {
+                const playButton = trackEl.querySelector('.play-button');
+                const stopButton = trackEl.querySelector('.stop-button');
+                const statusEl = trackEl.querySelector('.status');
+                
+                if (playButton) playButton.textContent = 'Play';
+                if (stopButton) stopButton.disabled = true;
+                if (statusEl) statusEl.textContent = 'Stopped';
+                
+                trackEl.classList.remove('now-playing');
+            }
+            
+            currentTrack = null;
+            isPlaying = false;
+        }
+        
+        // Track implementations
+        async function initGardenTrack(trackEl) {
+            // Create audio nodes
+            const padSynth = new Tone.PolySynth(Tone.Synth, {
+                envelope: {
+                    attack: 4,
+                    decay: 0.5,
+                    sustain: 0.5,
+                    release: 8
+                }
+            });
+            
+            const padReverb = new Tone.Reverb({
+                decay: 8,
+                wet: 0.5
+            });
+            
+            const melodySynth = new Tone.PolySynth(Tone.Synth, {
+                envelope: {
+                    attack: 0.1,
+                    decay: 0.3,
+                    sustain: 0.4,
+                    release: 1
+                },
+                oscillator: {
+                    type: 'triangle'
+                }
+            });
+            
+            const melodyDelay = new Tone.PingPongDelay({
+                delayTime: '8n',
+                feedback: 0.4,
+                wet: 0.3
+            });
+            
+            const rhythmSynth = new Tone.MetalSynth({
+                frequency: 200,
+                envelope: {
+                    attack: 0.001,
+                    decay: 0.1,
+                    release: 0.5
+                },
+                harmonicity: 8.5,
+                modulationIndex: 40,
+                resonance: 300,
+                octaves: 1.5
+            });
+            
+            // Connect audio nodes
+            padSynth.chain(padReverb, Tone.Destination);
+            melodySynth.chain(melodyDelay, Tone.Destination);
+            rhythmSynth.toDestination();
+            
+            // Set initial volumes
+            padSynth.volume.value = Tone.gainToDb(0.7);
+            melodySynth.volume.value = Tone.gainToDb(0.5);
+            rhythmSynth.volume.value = Tone.gainToDb(0.3);
+            
+            // Connect knobs to parameters
+            const ambienceKnob = trackEl.querySelector('[data-param="ambience"]');
+            const melodyKnob = trackEl.querySelector('[data-param="melody"]');
+            const rhythmKnob = trackEl.querySelector('[data-param="rhythm"]');
+            
+            ambienceKnob?.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                padSynth.volume.rampTo(Tone.gainToDb(value), 0.5);
+            });
+            
+            melodyKnob?.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                melodySynth.volume.rampTo(Tone.gainToDb(value), 0.5);
+            });
+            
+            rhythmKnob?.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                rhythmSynth.volume.rampTo(Tone.gainToDb(value), 0.5);
+            });
+            
+            // Create chord progression for pads
+            const chordProgression = [
+                ['C4', 'E4', 'G4'],
+                ['A3', 'C4', 'E4'],
+                ['F3', 'A3', 'C4'],
+                ['G3', 'B3', 'D4']
+            ];
+            
+            // Create melody notes
+            const melodyNotes = ['E4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5'];
+            let chordIndex = 0;
+            let melodyIndex = 0;
+            
+            // Create pad loop
+            const padLoop = new Tone.Loop(time => {
+                const chord = chordProgression[chordIndex];
+                padSynth.triggerAttackRelease(chord, '2n', time, 0.5);
+                chordIndex = (chordIndex + 1) % chordProgression.length;
+            }, '2n');
+            
+            // Create melody loop
+            const melodyLoop = new Tone.Loop(time => {
+                if (Math.random() > 0.3) { // 70% chance to play a note
+                    const note = melodyNotes[melodyIndex % melodyNotes.length];
+                    melodySynth.triggerAttackRelease(note, '8n', time, Math.random() * 0.3);
+                    melodyIndex++;
+                }
+            }, '4n');
+            
+            // Create rhythm loop
+            const rhythmLoop = new Tone.Loop(time => {
+                if (Math.random() > 0.5) { // 50% chance to play a rhythm hit
+                    rhythmSynth.triggerAttackRelease('C3', '16n', time, Math.random() * 0.2);
+                }
+            }, '8n');
+            
+            // Start all loops
+            padLoop.start(0);
+            melodyLoop.start(0);
+            rhythmLoop.start(0);
+            
+            // Store references for cleanup
+            const loops = [padLoop, melodyLoop, rhythmLoop];
+            const synths = [padSynth, melodySynth, rhythmSynth, padReverb, melodyDelay];
+            
+            // Set up visualization
+            const canvas = trackEl.querySelector('canvas');
+            const analyser = new Tone.Analyser('waveform', 256);
+            padSynth.connect(analyser);
+            
+            const ctx = canvas.getContext('2d');
+            let animationId;
+            
+            function draw() {
+                animationId = requestAnimationFrame(draw);
+                const values = analyser.getValue();
+                
+                ctx.fillStyle = 'rgba(26, 26, 46, 0.2)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#a8e6cf';
+                ctx.beginPath();
+                
+                const sliceWidth = canvas.width / values.length;
+                let x = 0;
+                
+                for (let i = 0; i < values.length; i++) {
+                    const v = values[i] * 100 + canvas.height / 2;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, v);
+                    } else {
+                        ctx.lineTo(x, v);
+                    }
+                    
+                    x += sliceWidth;
+                }
+                
+                ctx.stroke();
+            }
+            
+            // Start visualization
+            draw();
+            
+            // Set up transport
+            Tone.Transport.bpm.value = 72;
+            
+            // Start audio context and transport
+            await Tone.start();
+            Tone.Transport.start();
+            
+            // Cleanup function
+            return () => {
+                // Stop all loops
+                loops.forEach(loop => loop.stop());
+                
+                // Cancel animation
+                cancelAnimationFrame(animationId);
+                
+                // Dispose all synths and effects
+                synths.forEach(node => node.dispose());
+                
+                // Dispose analyser
+                analyser.dispose();
+            };
+        }
+        
+        // Add more track initializers here
+    </script>
+</body>
+</html>
