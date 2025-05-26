@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ambient Garden</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            color: #e6e6e6;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #container {
+            text-align: center;
+            z-index: 10;
+            background: rgba(26, 26, 46, 0.7);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #a8e6cf, #dcedc1);
+            /* Vendor prefixes with standard property last */
+            -webkit-background-clip: text;
+            -moz-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -moz-text-fill-color: transparent;
+            color: transparent;
+        }
+
+        p {
+            margin-top: 0;
+            color: #a8a8b3;
+        }
+
+        button {
+            background: #4a6bff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            outline: none;
+        }
+
+        button:hover {
+            background: #3a56cc;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #visualizer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        label {
+            color: #a8a8b3;
+            width: 100px;
+            text-align: left;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            height: 4px;
+            /* Vendor prefixes with standard property last */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background: #4a4a5a;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4a6bff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]:hover::-webkit-slider-thumb {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(74, 107, 255, 0.5);
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #4a6bff;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="visualizer"></canvas>
+    
+    <div id="container">
+        <h1>Ambient Garden</h1>
+        <p>A generative ambient music experience</p>
+        
+        <div class="controls">
+            <button id="startButton">Start Garden</button>
+            <div class="control-group">
+                <label>Ambience</label>
+                <input type="range" id="padVolume" min="0" max="1" step="0.01" value="0.7">
+            </div>
+            <div class="control-group">
+                <label>Melody</label>
+                <input type="range" id="melodyVolume" min="0" max="1" step="0.01" value="0.6">
+            </div>
+            <div class="control-group">
+                <label>Rhythm</label>
+                <input type="range" id="rhythmVolume" min="0" max="1" step="0.01" value="0.5">
+            </div>
+        </div>
+        
+        <div class="status" id="status">Click Start to begin the experience</div>
+    </div>
+
+    <script>
+        // Wait for the page to load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Audio context and nodes
+            let padSynth, melodySynth, pluckSynth, bassSynth, noiseSynth;
+            let padReverb, melodyDelay, bassFilter, noiseFilter, masterReverb;
+            let padSequence, melodySequence, pluckSequence, bassSequence, noiseSequence;
+            let isPlaying = false;
+            
+            // Canvas for visualization
+            const canvas = document.getElementById('visualizer');
+            const ctx = canvas.getContext('2d');
+            let analyser, dataArray;
+            
+            // Set canvas size
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            
+            // Initialize audio components
+            async function initAudio() {
+                await Tone.start();
+                console.log('Audio is ready');
+                
+                // Create effects
+                padReverb = new Tone.Reverb({
+                    decay: 8,
+                    wet: 0.5
+                }).toDestination();
+                
+                melodyDelay = new Tone.PingPongDelay({
+                    delayTime: '8n',
+                    feedback: 0.4,
+                    wet: 0.3
+                }).toDestination();
+                
+                bassFilter = new Tone.Filter(200, 'lowpass').toDestination();
+                noiseFilter = new Tone.Filter(800, 'lowpass').toDestination();
+                
+                masterReverb = new Tone.Reverb({
+                    decay: 4,
+                    wet: 0.3
+                }).toDestination();
+                
+                // Create synths
+                padSynth = new Tone.PolySynth(Tone.Synth, {
+                    envelope: {
+                        attack: 4,
+                        decay: 2,
+                        sustain: 0.5,
+                        release: 8
+                    }
+                }).chain(padReverb, masterReverb);
+                
+                melodySynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: {
+                        type: 'sine'
+                    },
+                    envelope: {
+                        attack: 0.5,
+                        decay: 0.3,
+                        sustain: 0.4,
+                        release: 2
+                    }
+                }).chain(melodyDelay, masterReverb);
+                
+                pluckSynth = new Tone.PluckSynth({
+                    attackNoise: 1,
+                    dampening: 4000,
+                    resonance: 0.7
+                }).chain(masterReverb);
+                
+                bassSynth = new Tone.MonoSynth({
+                    oscillator: {
+                        type: 'sine'
+                    },
+                    envelope: {
+                        attack: 0.1,
+                        decay: 0.5,
+                        sustain: 0.3,
+                        release: 1
+                    }
+                }).chain(bassFilter, masterReverb);
+                
+                noiseSynth = new Tone.NoiseSynth({
+                    noise: {
+                        type: 'brown'
+                    },
+                    envelope: {
+                        attack: 0.5,
+                        decay: 0.5,
+                        sustain: 0.1,
+                        release: 2
+                    }
+                }).chain(noiseFilter, masterReverb);
+                
+                // Set initial volumes
+                padSynth.volume.value = -12;
+                melodySynth.volume.value = -20;
+                pluckSynth.volume.value = -18;
+                bassSynth.volume.value = -24;
+                noiseSynth.volume.value = -30;
+                
+                // Create analyzer for visualization
+                analyser = new Tone.Analyser('waveform', 256);
+                masterReverb.connect(analyser);
+                
+                // Initialize sequences
+                createSequences();
+                
+                // Set up volume controls
+                setupVolumeControls();
+                
+                // Enable start button
+                document.getElementById('startButton').disabled = false;
+                updateStatus('Ready to start');
+            }
+            
+            // Create musical sequences
+            function createSequences() {
+                // Pad sequence - long, evolving chords
+                const padProgression = [
+                    ['C4', 'E4', 'G4'],
+                    ['D4', 'F4', 'A4'],
+                    ['E4', 'G4', 'B4'],
+                    ['F4', 'A4', 'C5']
+                ];
+                
+                padSequence = new Tone.Sequence((time, chord) => {
+                    padSynth.triggerAttackRelease(chord, '2m', time);
+                }, padProgression, '2m');
+                
+                // Melody sequence - sparse, random notes
+                const melodyNotes = ['C4', 'D4', 'E4', 'G4', 'A4', 'B4', 'C5'];
+                melodySequence = new Tone.Sequence((time, note) => {
+                    if (Math.random() > 0.7) {
+                        melodySynth.triggerAttackRelease(note, '8n', time);
+                    }
+                }, melodyNotes, '2n');
+                
+                // Pluck sequence - arpeggios
+                const pluckPatterns = [
+                    ['C4', 'E4', 'G4', 'B4'],
+                    ['D4', 'F4', 'A4', 'C5'],
+                    ['E4', 'G4', 'B4', 'D5'],
+                    ['G4', 'B4', 'D5', 'F5']
+                ];
+                
+                let pluckIndex = 0;
+                pluckSequence = new Tone.Sequence((time, note) => {
+                    if (Math.random() > 0.5) {
+                        pluckSynth.triggerAttackRelease(note, '16n', time);
+                    }
+                    if (note === 'B4' || note === 'F5') {
+                        pluckIndex = (pluckIndex + 1) % pluckPatterns.length;
+                        pluckSequence.events = pluckPatterns[pluckIndex];
+                    }
+                }, pluckPatterns[0], '8n');
+                
+                // Bass sequence - simple root notes
+                const bassNotes = ['C2', 'D2', 'E2', 'G2'];
+                bassSequence = new Tone.Sequence((time, note) => {
+                    bassSynth.triggerAttackRelease(note, '1n', time);
+                }, bassNotes, '1n');
+                
+                // Noise sequence - occasional texture
+                noiseSequence = new Tone.Sequence((time, vel) => {
+                    if (Math.random() > 0.8) {
+                        noiseSynth.triggerAttackRelease('8n', time, Math.random() * 0.5 + 0.1);
+                    }
+                }, [0, 0, 0, 0, 0, 0, 0, 0], '4n');
+                
+                // Set sequence properties
+                padSequence.loop = true;
+                melodySequence.loop = true;
+                pluckSequence.loop = true;
+                bassSequence.loop = true;
+                noiseSequence.loop = true;
+            }
+            
+            // Set up volume controls
+            function setupVolumeControls() {
+                document.getElementById('padVolume').addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    padSynth.volume.rampTo(Tone.gainToDb(value), 0.5);
+                });
+                
+                document.getElementById('melodyVolume').addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    melodySynth.volume.rampTo(Tone.gainToDb(value) - 10, 0.5);
+                    pluckSynth.volume.rampTo(Tone.gainToDb(value) - 12, 0.5);
+                });
+                
+                document.getElementById('rhythmVolume').addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    bassSynth.volume.rampTo(Tone.gainToDb(value) - 15, 0.5);
+                    noiseSynth.volume.rampTo(Tone.gainToDb(value) - 20, 0.5);
+                });
+            }
+            
+            // Start/stop the music
+            function togglePlayback() {
+                if (isPlaying) {
+                    // Stop playback
+                    Tone.Transport.stop();
+                    padSequence.stop();
+                    melodySequence.stop();
+                    pluckSequence.stop();
+                    bassSequence.stop();
+                    noiseSequence.stop();
+                    
+                    document.getElementById('startButton').textContent = 'Start Garden';
+                    updateStatus('Paused');
+                } else {
+                    // Start playback
+                    Tone.Transport.start();
+                    padSequence.start(0);
+                    melodySequence.start(0);
+                    pluckSequence.start(0);
+                    bassSequence.start(0);
+                    noiseSequence.start(0);
+                    
+                    document.getElementById('startButton').textContent = 'Pause Garden';
+                    updateStatus('Playing...');
+                    
+                    // Start visualization
+                    if (!animationFrameId) {
+                        animate();
+                    }
+                }
+                
+                isPlaying = !isPlaying;
+            }
+            
+            // Update status message
+            function updateStatus(message) {
+                document.getElementById('status').textContent = message;
+            }
+            
+            // Animation loop for visualization
+            let animationFrameId = null;
+            function animate() {
+                if (!isPlaying) {
+                    animationFrameId = null;
+                    return;
+                }
+                
+                // Get analyzer data
+                const values = analyser.getValue();
+                
+                // Clear canvas
+                ctx.fillStyle = 'rgba(26, 26, 46, 0.2)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw waveform
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = 'rgba(168, 230, 207, 0.8)';
+                ctx.beginPath();
+                
+                const sliceWidth = canvas.width * 1.0 / values.length;
+                let x = 0;
+                
+                for (let i = 0; i < values.length; i++) {
+                    const v = values[i] * 0.5;
+                    const y = v * canvas.height / 2 + canvas.height / 2;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                    
+                    x += sliceWidth;
+                }
+                
+                ctx.stroke();
+                
+                // Draw particles
+                for (let i = 0; i < 5; i++) {
+                    const size = Math.random() * 3 + 1;
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    const alpha = Math.random() * 0.1 + 0.1;
+                    
+                    ctx.fillStyle = `rgba(168, 230, 207, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                animationFrameId = requestAnimationFrame(animate);
+            }
+            
+            // Initialize audio on first user interaction
+            const startButton = document.getElementById('startButton');
+            let audioInitialized = false;
+            
+            // Initialize everything when the start button is clicked
+            startButton.addEventListener('click', async () => {
+                if (!audioInitialized) {
+                    startButton.textContent = 'Loading...';
+                    startButton.disabled = true;
+                    updateStatus('Initializing audio...');
+                    
+                    try {
+                        // Create audio context on user gesture
+                        await Tone.start();
+                        console.log('Audio context started');
+                        
+                        // Initialize audio components
+                        await initAudio();
+                        audioInitialized = true;
+                        
+                        // Start playback
+                        togglePlayback();
+                    } catch (error) {
+                        console.error('Error initializing audio:', error);
+                        updateStatus('Error initializing audio. Please refresh and try again.');
+                        startButton.textContent = 'Retry';
+                        startButton.disabled = false;
+                    }
+                } else {
+                    // Toggle playback if already initialized
+                    togglePlayback();
+                }
+            });
+            
+            // Enable start button
+            startButton.disabled = false;
+            updateStatus('Click Start to begin the experience');
+        });
+    </script>
+</body>
+</html>
