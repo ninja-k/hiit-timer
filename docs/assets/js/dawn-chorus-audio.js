@@ -113,15 +113,15 @@ export class DawnChorusAudio {
                 volume: -6
             }).connect(this.reverb);
             
-            // Create wind noise with better filtering
-            this.noise = new Tone.Noise('pink').start();
+            // Create wind noise with better filtering - start silent
+            this.noise = new Tone.Noise('pink');
+            this.noise.volume.value = -Infinity; // Start silent
             this.noiseFilter = new Tone.Filter({
                 type: 'bandpass',
                 frequency: 500,
                 Q: 0.5,
                 gain: 2
             }).connect(this.reverb);
-            this.noise.volume.value = -20;
             this.noise.connect(this.noiseFilter);
             
             // Create analyser for visualization
@@ -352,8 +352,9 @@ export class DawnChorusAudio {
             if (this.chimeLoop) this.chimeLoop.start(0);
             if (this.birdLoop) this.birdLoop.start(0);
             
-            // Fade in noise (wind)
+            // Start and fade in noise (wind)
             if (this.noise) {
+                this.noise.start();
                 this.noise.volume.rampTo(-30, 5);
             }
             

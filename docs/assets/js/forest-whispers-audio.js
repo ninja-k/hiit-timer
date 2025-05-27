@@ -32,8 +32,8 @@ class ForestAudio {
         const wind = new Tone.Noise("pink");
         const windFilter = new Tone.Filter({
             type: "lowpass",
-            frequency: 200,
-            rolloff: -24
+            frequency: 150,  // Lower frequency to reduce static
+            rolloff: -48     // Steep rolloff (valid options: -12, -24, -48, -96)
         });
         const windLFO = new Tone.LFO({
             frequency: 0.1,

@@ -1,76 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dawn Chorus - Ambient Soundscape</title>
+    <title>Forest Whispers - Ambient Soundscape</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <!-- Load Tone.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    
-    <!-- Load our modules -->
-    <script type="module" src="./assets/js/dawn-chorus-audio.js"></script>
-    <script type="module" src="./assets/js/dawn-chorus-visual.js"></script>
-    <script type="module" src="./assets/js/dawn-chorus-controller.js"></script>
-    
-    <!-- Add a small script to handle audio context unlocking -->
-    <script>
-        // This helps unlock audio on mobile devices
-        function unlockAudio() {
-            if (Tone.context.state !== 'running') {
-                Tone.start();
-                console.log('Audio context started');
-                return true;
-            }
-            return false;
-        }
-        
-        // Initial unlock on first interaction
-        document.addEventListener('click', unlockAudio, { once: true });
-    </script>
+    <script type="module" src="./assets/js/forest-whispers-audio.js"></script>
+    <script type="module" src="./assets/js/forest-whispers-visual.js"></script>
+    <script type="module" src="./assets/js/forest-whispers-controller.js"></script>
     <style>
         :root {
-            --dawn-dark: #0f0c29;
-            --dawn-mid: #302b63;
-            --dawn-light: #6a7bd1;
-            --sun-color: #ff9d00;
+            --forest-dark: #0d1f0e;
+            --forest-mid: #2a5c2b;
+            --forest-light: #5a9e5f;
+            --forest-highlight: #8bc34a;
             --text-light: #f0f7f0;
-            --transition-time: 0.5s;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, var(--dawn-dark), var(--dawn-mid));
+            background: linear-gradient(135deg, var(--forest-dark), var(--forest-mid));
             color: var(--text-light);
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
             line-height: 1.5;
         }
-        
+
         .container {
             position: relative;
             z-index: 2;
             max-width: 1000px;
             margin: 0 auto;
             padding: 1.5rem 1rem;
-            min-height: 100vh;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            background: rgba(15, 12, 41, 0.3);
-            backdrop-filter: blur(10px);
-            overflow-y: auto;
             width: 100%;
         }
 
@@ -79,17 +58,7 @@
                 padding: 2rem;
             }
         }
-        
-        h1 {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            color: var(--sun-color);
-            text-shadow: 0 0 15px rgba(255, 157, 0, 0.3);
-            font-size: 2.5rem;
-            font-weight: 300;
-            letter-spacing: 2px;
-        }
-        
+
         .visualizer-container {
             flex: 1;
             position: relative;
@@ -98,8 +67,8 @@
             margin: 0.5rem 0 1.5rem;
             min-height: 300px;
             max-height: 60vh;
-            border: 1px solid rgba(106, 123, 209, 0.4);
-            background: rgba(15, 12, 41, 0.25);
+            border: 1px solid rgba(90, 158, 95, 0.4);
+            background: rgba(13, 31, 14, 0.25);
             width: 100%;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             transition: all 0.3s ease;
@@ -109,25 +78,27 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             transform: translateY(-2px);
         }
-        
-        #visualizer {
-            width: 100%;
-            height: 100%;
+
+        @media (min-width: 768px) {
+            .visualizer-container {
+                min-height: 300px;
+            }
         }
-        
-        .sun {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            background: radial-gradient(circle, var(--sun-color), #ffd700);
-            border-radius: 50%;
-            box-shadow: 0 0 40px 15px rgba(255, 157, 0, 0.3);
-            bottom: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            transition: bottom 60s linear, box-shadow 60s ease-in-out;
+
+        @media (max-width: 480px) {
+            .visualizer-container {
+                min-height: 150px;
+                max-height: 30vh;
+            }
         }
-        
+
+        @media (max-height: 600px) {
+            .visualizer-container {
+                min-height: 120px;
+                margin: 0.5rem 0;
+            }
+        }
+
         .controls {
             display: flex;
             flex-direction: column;
@@ -138,9 +109,9 @@
             padding: 1rem;
             background: rgba(0, 0, 0, 0.1);
             border-radius: 12px;
-            border: 1px solid rgba(106, 123, 209, 0.2);
+            border: 1px solid rgba(90, 158, 95, 0.2);
         }
-        
+
         .control-group {
             display: flex;
             align-items: center;
@@ -155,64 +126,51 @@
         .control-group:hover {
             background: rgba(0, 0, 0, 0.2);
         }
-        
-        .control-group:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        
+
         .control-label {
-            color: #ffd8b1;
+            color: #c8e6c9;
             font-size: 0.85rem;
             font-weight: 500;
             margin-right: 1rem;
             min-width: 100px;
             letter-spacing: 0.3px;
         }
-        
+
         .knob {
             flex: 1;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 0.75rem;
+            padding: 0.25rem 0;
         }
-        
+
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
             flex: 1;
             height: 4px;
-            background: rgba(255, 216, 177, 0.2);
+            background: rgba(200, 230, 201, 0.2);
             border-radius: 2px;
             outline: none;
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        
+
         input[type="range"]:hover {
             height: 6px;
         }
-        
+
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            appearance: none;
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            background: #fff;
-            border: 2px solid var(--sun-color);
+            background: var(--forest-highlight);
             cursor: pointer;
-            margin-top: -5px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            margin-top: -6px;
             transition: all 0.2s ease;
         }
-        
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-            background: var(--sun-color);
-        }
-        
+
         .knob-value {
             min-width: 36px;
             text-align: center;
@@ -224,20 +182,22 @@
             border-radius: 4px;
             font-weight: 500;
         }
-        
+
         .control-buttons {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
-            gap: 1rem;
-            margin: 1.5rem 0;
+            gap: 0.75rem;
+            margin: 1.5rem 0 1rem;
+            width: 100%;
         }
-        
+
         button {
             padding: 0.7rem 1.5rem;
             border: none;
             border-radius: 100px;
-            background: var(--sun-color);
-            color: #1a0f2d;
+            background: var(--forest-light);
+            color: #0d1f0e;
             font-weight: 600;
             font-size: 0.85rem;
             cursor: pointer;
@@ -249,53 +209,80 @@
             align-items: center;
             gap: 0.5rem;
         }
-        
+
         button svg {
             width: 16px;
             height: 16px;
         }
-        
+
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            background: #ffc97a;
+            background: #fff;
         }
-        
+
         button:active {
             transform: translateY(0);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        
+
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-        
-        #stopButton {
-            background: #ff6b6b;
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(90, 158, 95, 0.3);
         }
-        
-        .status {
+
+        .nav-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            color: rgba(200, 230, 201, 0.8);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #fff;
+            background: rgba(90, 158, 95, 0.2);
+        }
+
+        .nav-link.active {
+            font-weight: 500;
+            color: var(--forest-light);
+        }
+
+        footer {
             text-align: center;
-            margin-top: 1rem;
-            min-height: 1.5rem;
-            color: var(--sun-color);
-            font-style: italic;
-            font-size: 0.9rem;
+            margin-top: 2rem;
+            padding: 1.5rem 0;
+            font-size: 0.85rem;
+            color: rgba(200, 230, 201, 0.6);
+            border-top: 1px solid rgba(90, 158, 95, 0.2);
         }
-        
-        .time-display {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            color: var(--sun-color);
-        }
-        
-        /* Medium screens */
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem 0.75rem;
@@ -341,67 +328,10 @@
                 padding: 0.6rem 1.2rem;
                 font-size: 0.8rem;
             }
-            
-            .control-group {
-                padding: 0.5rem;
-            }
-        }
-        
-        /* Navigation */
-        .nav-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(106, 123, 209, 0.3);
-        }
-        
-        .nav-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #fff;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 1rem;
-        }
-        
-        .nav-link {
-            color: rgba(200, 200, 255, 0.8);
-            text-decoration: none;
-            font-size: 0.9rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-        }
-        
-        .nav-link:hover, .nav-link.active {
-            color: #fff;
-            background: rgba(106, 123, 209, 0.2);
-        }
-        
-        .nav-link.active {
-            font-weight: 500;
-            color: var(--sun-color);
-        }
-        
-        /* Footer */
-        footer {
-            text-align: center;
-            margin-top: 2rem;
-            padding: 1.5rem 0;
-            font-size: 0.85rem;
-            color: rgba(200, 200, 255, 0.6);
-            border-top: 1px solid rgba(106, 123, 209, 0.2);
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <nav class="nav-container">
@@ -413,46 +343,44 @@
                 Ambient Soundscapes
             </a>
             <div class="nav-links">
-                <a href="forest-whispers.html" class="nav-link">Forest</a>
-                <a href="dawn-chorus.html" class="nav-link active">Dawn</a>
+                <a href="forest-whispers.html" class="nav-link active">Forest</a>
+                <a href="dawn-chorus.html" class="nav-link">Dawn</a>
                 <a href="tonejs-garden.html" class="nav-link">Garden</a>
             </div>
         </nav>
         
-        <div class="time-display" id="timeDisplay">Pre-dawn</div>
-        <h1>Dawn Chorus</h1>
-        
+        <h1>Forest Whispers</h1>
+
         <div class="visualizer-container">
-            <canvas id="visualizer"></canvas>
-            <div class="sun" id="sun"></div>
+            <div class="time-display" id="timeDisplay">Dawn</div>
         </div>
-        
+
         <div class="controls">
             <div class="control-group">
-                <span class="control-label">Pads</span>
+                <span class="control-label">Canopy</span>
                 <div class="knob">
-                    <input type="range" id="pads" min="0" max="1" step="0.01" value="0.7">
-                    <span class="knob-value" id="pads-value">70%</span>
+                    <input type="range" id="canopy" min="0" max="100" value="70" step="1">
+                    <span class="knob-value" id="canopy-value">70%</span>
                 </div>
             </div>
-            
+
             <div class="control-group">
-                <span class="control-label">Chimes</span>
+                <span class="control-label">Understory</span>
                 <div class="knob">
-                    <input type="range" id="chimes" min="0" max="1" step="0.01" value="0.5">
-                    <span class="knob-value" id="chimes-value">50%</span>
+                    <input type="range" id="understory" min="0" max="100" value="50" step="1">
+                    <span class="knob-value" id="understory-value">50%</span>
                 </div>
             </div>
-            
+
             <div class="control-group">
-                <span class="control-label">Birds</span>
+                <span class="control-label">Forest Floor</span>
                 <div class="knob">
-                    <input type="range" id="birds" min="0" max="1" step="0.01" value="0.3">
-                    <span class="knob-value" id="birds-value">30%</span>
+                    <input type="range" id="forest-floor" min="0" max="100" value="30" step="1">
+                    <span class="knob-value" id="forest-floor-value">30%</span>
                 </div>
             </div>
         </div>
-        
+
         <div class="control-buttons">
             <button id="playButton">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -468,8 +396,9 @@
                 Stop
             </button>
         </div>
-        
-        <div class="status" id="status">Click anywhere to enable audio, then press Begin Dawn</div>
+
+        <div class="status" id="status">Ready to explore the forest...</div>
     </div>
 </body>
+
 </html>
