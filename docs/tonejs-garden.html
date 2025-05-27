@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,13 +17,13 @@
             --garden-highlight: #8bdf9e;
             --text-light: #f0f7f0;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
@@ -56,7 +57,7 @@
                 padding: 2rem;
             }
         }
-        
+
         @media (min-width: 768px) {
             .container {
                 padding: 2rem;
@@ -70,7 +71,7 @@
             text-shadow: 0 0 10px rgba(139, 223, 158, 0.3);
             font-size: 2.5rem;
         }
-        
+
         @media (max-height: 600px) {
             h1 {
                 font-size: 1.5rem;
@@ -97,20 +98,20 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             transform: translateY(-2px);
         }
-        
+
         @media (min-width: 768px) {
             .visualizer-container {
                 min-height: 350px;
             }
         }
-        
+
         @media (max-width: 480px) {
             .visualizer-container {
                 min-height: 250px;
                 max-height: 50vh;
             }
         }
-        
+
         @media (max-height: 600px) {
             .visualizer-container {
                 min-height: 200px;
@@ -127,32 +128,32 @@
             margin: 1.5rem 0 1rem;
             width: 100%;
         }
-        
+
         @media (max-width: 480px) {
             .control-buttons {
                 margin: 1rem 0;
                 gap: 0.5rem;
             }
-            
+
             .control-buttons button {
                 min-width: 100px;
                 padding: 0.7rem 1rem;
                 font-size: 0.9rem;
             }
         }
-        
+
         @media (max-height: 600px) {
             .control-buttons {
                 margin: 0.75rem 0;
             }
-            
+
             .control-buttons button {
                 padding: 0.5rem 0.8rem;
                 font-size: 0.85rem;
                 min-width: 90px;
             }
         }
-        
+
         .control-buttons button {
             flex: 1 1 auto;
             min-width: 120px;
@@ -161,7 +162,7 @@
             font-size: 0.95rem;
             white-space: nowrap;
         }
-        
+
         button {
             padding: 0.8rem 2rem;
             border: none;
@@ -263,7 +264,7 @@
             padding-bottom: 1rem;
             border-bottom: 1px solid rgba(139, 223, 158, 0.3);
         }
-        
+
         .nav-title {
             font-size: 1.5rem;
             font-weight: 600;
@@ -273,12 +274,12 @@
             align-items: center;
             gap: 0.5rem;
         }
-        
+
         .nav-links {
             display: flex;
             gap: 1rem;
         }
-        
+
         .nav-link {
             color: rgba(200, 247, 211, 0.8);
             text-decoration: none;
@@ -287,17 +288,18 @@
             border-radius: 6px;
             transition: all 0.2s ease;
         }
-        
-        .nav-link:hover, .nav-link.active {
+
+        .nav-link:hover,
+        .nav-link.active {
             color: #fff;
             background: rgba(139, 223, 158, 0.2);
         }
-        
+
         .nav-link.active {
             font-weight: 500;
             color: var(--garden-highlight);
         }
-        
+
         /* Footer */
         footer {
             text-align: center;
@@ -307,7 +309,7 @@
             color: rgba(200, 247, 211, 0.6);
             border-top: 1px solid rgba(139, 223, 158, 0.2);
         }
-        
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem 0.75rem;
@@ -402,7 +404,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        
+
         input[type="range"]:hover {
             height: 6px;
         }
@@ -417,29 +419,32 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <nav class="nav-container">
             <a href="index.html" class="nav-title">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 3L4 9V21H20V9L12 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M9 21V12H15V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 3L4 9V21H20V9L12 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M9 21V12H15V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
                 </svg>
                 Ambient Soundscapes
             </a>
             <div class="nav-links">
-                <a href="forest-whispers.html" class="nav-link">Forest Whispers</a>
                 <a href="dawn-chorus.html" class="nav-link">Dawn Chorus</a>
+                <a href="forest-whispers.html" class="nav-link">Forest Whispers</a>
                 <a href="#" class="nav-link active">Ambient Garden</a>
             </div>
         </nav>
-        
+
         <h1>Ambient Garden</h1>
-        
+
         <div class="visualizer-container">
             <canvas id="visualizer"></canvas>
         </div>
-        
+
         <div class="controls">
             <div class="control-group">
                 <span class="control-label">Ambience</span>
@@ -448,7 +453,7 @@
                     <span class="knob-value" id="padVolume-value">70%</span>
                 </div>
             </div>
-            
+
             <div class="control-group">
                 <span class="control-label">Melody</span>
                 <div class="knob">
@@ -456,7 +461,7 @@
                     <span class="knob-value" id="melodyVolume-value">60%</span>
                 </div>
             </div>
-            
+
             <div class="control-group">
                 <span class="control-label">Rhythm</span>
                 <div class="knob">
@@ -465,23 +470,23 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="control-buttons">
             <button id="playButton">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5 3L19 12L5 21V3Z" fill="currentColor"/>
+                    <path d="M5 3L19 12L5 21V3Z" fill="currentColor" />
                 </svg>
                 Start Garden
             </button>
             <button id="stopButton">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="5" y="5" width="4" height="14" rx="1" fill="currentColor"/>
-                    <rect x="15" y="5" width="4" height="14" rx="1" fill="currentColor"/>
+                    <rect x="5" y="5" width="4" height="14" rx="1" fill="currentColor" />
+                    <rect x="15" y="5" width="4" height="14" rx="1" fill="currentColor" />
                 </svg>
                 Stop
             </button>
         </div>
-        
+
         <div class="status" id="status">Ready to experience the garden...</div>
     </div>
 
@@ -493,57 +498,57 @@
             let padReverb, melodyDelay, bassFilter, noiseFilter, masterReverb;
             let padSequence, melodySequence, pluckSequence, bassSequence, noiseSequence;
             let isPlaying = false;
-            
+
             // Canvas for visualization
             const canvas = document.getElementById('visualizer');
             const ctx = canvas.getContext('2d');
             let analyser, dataArray;
-            
+
             // Animation loop for visualization
             let animationFrameId = null;
             let plants = [];
             let time = 0;
-            
+
             // Set canvas size
             function resizeCanvas() {
                 canvas.width = canvas.parentElement.clientWidth;
                 canvas.height = canvas.parentElement.clientHeight;
                 createGarden();
-                
+
                 // Draw initial garden even before audio starts
                 drawGarden();
             }
-            
+
             // Static time for garden animation without audio
             let staticTime = 0;
-            
+
             // Draw the garden with gentle animation even without audio
             function drawGarden() {
                 // Update static time for continuous animation
                 staticTime += 0.01;
-                
+
                 // Clear canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
+
                 // Draw gradient background
                 const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
                 gradient.addColorStop(0, 'rgba(15, 42, 29, 0.2)');
                 gradient.addColorStop(1, 'rgba(26, 77, 46, 0.2)');
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
+
                 // Draw plants with gentle animation
                 plants.forEach((plant) => {
                     const plantHeight = plant.height * 0.8; // Taller plants for better visibility
                     const sway = Math.sin(staticTime * plant.speed + plant.phase) * 10 * plant.sway; // More visible swaying
-                    
+
                     ctx.save();
                     ctx.translate(plant.x, canvas.height - 20);
-                    
+
                     // Draw stem with curves for more natural look
                     ctx.beginPath();
                     ctx.moveTo(0, 0);
-                    
+
                     const segmentHeight = plantHeight / plant.segments;
                     for (let i = 1; i <= plant.segments; i++) {
                         const segmentSway = Math.sin(staticTime * plant.speed * 0.5 + i * 0.5 + plant.phase) * 5;
@@ -553,17 +558,17 @@
                         const cp2y = -(i * segmentHeight * 0.8);
                         const x = (i / plant.segments) * sway;
                         const y = -i * segmentHeight;
-                        
+
                         // Use bezier curves for more natural plant movement
                         ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
                     }
-                    
+
                     ctx.strokeStyle = `hsla(${plant.hue}, ${plant.saturation}%, ${plant.lightness}%, 0.8)`;
                     ctx.lineWidth = 2;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
                     ctx.stroke();
-                    
+
                     // Draw multiple leaves for better visibility
                     if (plant.segments > 2) {
                         // Add two sets of leaves
@@ -572,14 +577,14 @@
                             const leafY = -leafPos * segmentHeight;
                             const leafSize = 10 + Math.sin(staticTime * 2) * 2; // Gentle pulsing
                             const leafAngle = 0.5 + Math.sin(staticTime) * 0.1; // Gentle movement
-                            
+
                             // Left leaf
                             ctx.save();
                             ctx.translate((leafPos / plant.segments) * sway, leafY);
                             ctx.rotate(-leafAngle);
                             drawLeaf(leafSize, plant.hue, plant.saturation + 10, plant.lightness + 15);
                             ctx.restore();
-                            
+
                             // Right leaf
                             ctx.save();
                             ctx.translate((leafPos / plant.segments) * sway, leafY);
@@ -588,18 +593,18 @@
                             ctx.restore();
                         }
                     }
-                    
+
                     // Occasionally draw flowers even without audio
                     if (Math.sin(staticTime * plant.speed + plant.phase) > 0.7) {
                         const flowerSize = 6 + Math.sin(staticTime * 2) * 2;
                         const flowerHue = plant.flowerHue || (plant.hue + 180) % 360;
-                        
+
                         // Flower center
                         ctx.beginPath();
                         ctx.arc(sway, -plantHeight, flowerSize, 0, Math.PI * 2);
                         ctx.fillStyle = `hsla(${flowerHue}, ${plant.saturation + 20}%, ${plant.lightness + 20}%, 0.8)`;
                         ctx.fill();
-                        
+
                         // Petals
                         const petalCount = 5;
                         for (let i = 0; i < petalCount; i++) {
@@ -607,51 +612,51 @@
                             const petalSize = flowerSize * (0.8 + Math.sin(staticTime * 2 + i) * 0.2);
                             const x = Math.cos(angle) * flowerSize * 1.5 + sway;
                             const y = Math.sin(angle) * flowerSize * 1.5 - plantHeight;
-                            
+
                             ctx.beginPath();
                             ctx.ellipse(x, y, petalSize, petalSize * 0.5, angle, 0, Math.PI * 2);
                             ctx.fillStyle = `hsla(${(flowerHue + i * 30) % 360}, ${plant.saturation + 30}%, ${plant.lightness + 20}%, 0.7)`;
                             ctx.fill();
                         }
                     }
-                    
+
                     ctx.restore();
                 });
-                
+
                 // Continue animation if not playing audio
                 if (!isPlaying) {
                     requestAnimationFrame(drawGarden);
                 }
             }
-            
+
             window.addEventListener('resize', resizeCanvas);
             resizeCanvas();
-            
+
             // Initialize audio components
             async function initAudio() {
                 await Tone.start();
                 console.log('Audio is ready');
-                
+
                 // Create effects
                 padReverb = new Tone.Reverb({
                     decay: 8,
                     wet: 0.5
                 }).toDestination();
-                
+
                 melodyDelay = new Tone.PingPongDelay({
                     delayTime: '8n',
                     feedback: 0.4,
                     wet: 0.3
                 }).toDestination();
-                
+
                 bassFilter = new Tone.Filter(200, 'lowpass').toDestination();
                 noiseFilter = new Tone.Filter(800, 'lowpass').toDestination();
-                
+
                 masterReverb = new Tone.Reverb({
                     decay: 4,
                     wet: 0.3
                 }).toDestination();
-                
+
                 // Create synths
                 padSynth = new Tone.PolySynth(Tone.Synth, {
                     envelope: {
@@ -661,7 +666,7 @@
                         release: 8
                     }
                 }).chain(padReverb, masterReverb);
-                
+
                 melodySynth = new Tone.PolySynth(Tone.Synth, {
                     oscillator: {
                         type: 'sine'
@@ -673,13 +678,13 @@
                         release: 2
                     }
                 }).chain(melodyDelay, masterReverb);
-                
+
                 pluckSynth = new Tone.PluckSynth({
                     attackNoise: 1,
                     dampening: 4000,
                     resonance: 0.7
                 }).chain(masterReverb);
-                
+
                 bassSynth = new Tone.MonoSynth({
                     oscillator: {
                         type: 'sine'
@@ -691,7 +696,7 @@
                         release: 1
                     }
                 }).chain(bassFilter, masterReverb);
-                
+
                 noiseSynth = new Tone.NoiseSynth({
                     noise: {
                         type: 'brown'
@@ -703,41 +708,41 @@
                         release: 2
                     }
                 }).chain(noiseFilter, masterReverb);
-                
+
                 // Set initial volumes
                 padSynth.volume.value = -12;
                 melodySynth.volume.value = -20;
                 pluckSynth.volume.value = -18;
                 bassSynth.volume.value = -24;
                 noiseSynth.volume.value = -30;
-                
+
                 // Set up analyzer for visualization
                 analyser = new Tone.Analyser('waveform', 128);
                 masterReverb.connect(analyser);
-                
+
                 // Initialize the garden visualization
                 createGarden();
-                
+
                 // Make sure the canvas is properly sized
                 resizeCanvas();
-                
+
                 // Create musical sequences
                 createSequences();
-                
+
                 // Set up volume controls
                 setupVolumeControls();
-                
+
                 // Start the animation immediately (even without music)
                 if (!animationFrameId) {
                     time = 0;
                     animate();
                 }
-                
+
                 // Enable play button
                 document.getElementById('playButton').disabled = false;
                 updateStatus('Ready to start');
             }
-            
+
             // Create musical sequences
             function createSequences() {
                 // Pad sequence - long, evolving chords
@@ -747,11 +752,11 @@
                     ['E4', 'G4', 'B4'],
                     ['F4', 'A4', 'C5']
                 ];
-                
+
                 padSequence = new Tone.Sequence((time, chord) => {
                     padSynth.triggerAttackRelease(chord, '2m', time);
                 }, padProgression, '2m');
-                
+
                 // Melody sequence - sparse, random notes
                 const melodyNotes = ['C4', 'D4', 'E4', 'G4', 'A4', 'B4', 'C5'];
                 melodySequence = new Tone.Sequence((time, note) => {
@@ -759,7 +764,7 @@
                         melodySynth.triggerAttackRelease(note, '8n', time);
                     }
                 }, melodyNotes, '2n');
-                
+
                 // Pluck sequence - arpeggios
                 const pluckPatterns = [
                     ['C4', 'E4', 'G4', 'B4'],
@@ -767,7 +772,7 @@
                     ['E4', 'G4', 'B4', 'D5'],
                     ['G4', 'B4', 'D5', 'F5']
                 ];
-                
+
                 let pluckIndex = 0;
                 pluckSequence = new Tone.Sequence((time, note) => {
                     if (Math.random() > 0.5) {
@@ -778,20 +783,20 @@
                         pluckSequence.events = pluckPatterns[pluckIndex];
                     }
                 }, pluckPatterns[0], '8n');
-                
+
                 // Bass sequence - simple root notes
                 const bassNotes = ['C2', 'D2', 'E2', 'G2'];
                 bassSequence = new Tone.Sequence((time, note) => {
                     bassSynth.triggerAttackRelease(note, '1n', time);
                 }, bassNotes, '1n');
-                
+
                 // Noise sequence - occasional texture
                 noiseSequence = new Tone.Sequence((time, vel) => {
                     if (Math.random() > 0.8) {
                         noiseSynth.triggerAttackRelease('8n', time, Math.random() * 0.5 + 0.1);
                     }
                 }, [0, 0, 0, 0, 0, 0, 0, 0], '4n');
-                
+
                 // Set sequence properties
                 padSequence.loop = true;
                 melodySequence.loop = true;
@@ -799,7 +804,7 @@
                 bassSequence.loop = true;
                 noiseSequence.loop = true;
             }
-            
+
             // Set up volume controls
             function setupVolumeControls() {
                 document.getElementById('padVolume').addEventListener('input', (e) => {
@@ -807,14 +812,14 @@
                     padSynth.volume.rampTo(Tone.gainToDb(value), 0.5);
                     document.getElementById('padVolume-value').textContent = Math.round(value * 100) + '%';
                 });
-                
+
                 document.getElementById('melodyVolume').addEventListener('input', (e) => {
                     const value = parseFloat(e.target.value);
                     melodySynth.volume.rampTo(Tone.gainToDb(value) - 10, 0.5);
                     pluckSynth.volume.rampTo(Tone.gainToDb(value) - 12, 0.5);
                     document.getElementById('melodyVolume-value').textContent = Math.round(value * 100) + '%';
                 });
-                
+
                 document.getElementById('rhythmVolume').addEventListener('input', (e) => {
                     const value = parseFloat(e.target.value);
                     bassSynth.volume.rampTo(Tone.gainToDb(value) - 15, 0.5);
@@ -822,28 +827,28 @@
                     document.getElementById('rhythmVolume-value').textContent = Math.round(value * 100) + '%';
                 });
             }
-            
+
             // Completely rewritten audio control system for immediate response
             let sequencesCreated = false;
-            
+
             function togglePlayback() {
                 try {
                     // First, determine what state we're transitioning to
                     const willBePlaying = !isPlaying;
-                    
+
                     // Update UI immediately for better responsiveness
                     document.getElementById('playButton').disabled = willBePlaying;
                     document.getElementById('stopButton').disabled = !willBePlaying;
                     updateStatus(willBePlaying ? 'Experiencing the garden...' : 'Paused');
-                    
+
                     // Update state before doing audio operations
                     isPlaying = willBePlaying;
-                    
+
                     // Handle audio based on new state
                     if (willBePlaying) {
                         // Starting playback
                         console.log('Starting audio playback');
-                        
+
                         // Complete reset of audio system for reliable restart
                         if (sequencesCreated) {
                             // Dispose old sequences to prevent memory leaks
@@ -852,7 +857,7 @@
                             if (pluckSequence) pluckSequence.dispose();
                             if (bassSequence) bassSequence.dispose();
                             if (noiseSequence) noiseSequence.dispose();
-                            
+
                             // Clear variables
                             padSequence = null;
                             melodySequence = null;
@@ -860,19 +865,19 @@
                             bassSequence = null;
                             noiseSequence = null;
                         }
-                        
+
                         // Reset transport completely
                         Tone.Transport.cancel();
                         Tone.Transport.stop();
                         Tone.Transport.position = 0;
-                        
+
                         // Create fresh sequences
                         createSequences();
                         sequencesCreated = true;
-                        
+
                         // Start Transport first
                         Tone.Transport.start();
-                        
+
                         // Start all sequences immediately
                         padSequence.start(0);
                         melodySequence.start(0);
@@ -883,10 +888,10 @@
                     } else {
                         // Stopping playback
                         console.log('Stopping audio playback');
-                        
+
                         // Stop transport first (this stops all scheduled events)
                         Tone.Transport.stop();
-                        
+
                         // No need to stop sequences individually as Transport.stop() handles this
                     }
                 } catch (error) {
@@ -898,17 +903,17 @@
                     document.getElementById('stopButton').disabled = true;
                 }
             }
-            
+
             // Update status message
             function updateStatus(message) {
                 document.getElementById('status').textContent = message;
             }
-            
+
             // Create garden plants
             function createGarden() {
                 plants = [];
                 const plantCount = Math.floor(canvas.width / 30); // One plant every 30px
-                
+
                 for (let i = 0; i < plantCount; i++) {
                     plants.push({
                         x: (i / plantCount) * canvas.width,
@@ -924,7 +929,7 @@
                     });
                 }
             }
-            
+
             // Draw a leaf
             function drawLeaf(size, h, s, l) {
                 ctx.beginPath();
@@ -932,24 +937,24 @@
                 ctx.fillStyle = `hsla(${h}, ${s}%, ${l}%, 0.7)`;
                 ctx.fill();
             }
-            
+
             // Draw a static garden view (fallback if animation fails)
             function drawGarden() {
                 // Clear canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
+
                 // Draw gradient background
                 const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
                 gradient.addColorStop(0, 'rgba(15, 42, 29, 0.2)');
                 gradient.addColorStop(1, 'rgba(26, 77, 46, 0.2)');
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
+
                 // Draw static plants
                 plants.forEach((plant) => {
                     ctx.save();
                     ctx.translate(plant.x, canvas.height - 20);
-                    
+
                     // Draw simple stem
                     ctx.beginPath();
                     ctx.moveTo(0, 0);
@@ -957,7 +962,7 @@
                     ctx.strokeStyle = `hsla(${plant.hue}, ${plant.saturation}%, ${plant.lightness}%, 0.8)`;
                     ctx.lineWidth = 2;
                     ctx.stroke();
-                    
+
                     // Draw simple leaves
                     if (plant.segments > 2) {
                         ctx.save();
@@ -965,69 +970,69 @@
                         ctx.rotate(-0.3);
                         drawLeaf(10, plant.hue, plant.saturation + 10, plant.lightness + 10);
                         ctx.restore();
-                        
+
                         ctx.save();
                         ctx.translate(0, -plant.height * 0.6);
                         ctx.rotate(0.3);
                         drawLeaf(10, plant.hue, plant.saturation + 10, plant.lightness + 10);
                         ctx.restore();
                     }
-                    
+
                     ctx.restore();
                 });
             }
-            
+
             // Single animation function for both playing and non-playing states
             function animate() {
                 // Always continue animation
                 animationFrameId = requestAnimationFrame(animate);
-                
+
                 // Update time - slower animation
                 time += 0.005; // Half the animation speed
-                
+
                 // Clear canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
+
                 // Draw gradient background
                 const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
                 gradient.addColorStop(0, 'rgba(15, 42, 29, 0.2)');
                 gradient.addColorStop(1, 'rgba(26, 77, 46, 0.2)');
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
+
                 try {
                     // Different animation based on whether audio is playing
                     let audioData = [];
-                    
+
                     if (isPlaying) {
                         // Get analyzer data when playing
                         const values = analyser.getValue();
-                        
+
                         // Convert analyzer data to usable values
                         audioData = Array.from(values).map(v => Math.abs(v));
                     }
-                    
+
                     // Draw plants
                     plants.forEach((plant, index) => {
                         // Default animation values - extremely subtle
                         let audioLevel = Math.abs(Math.sin(time * plant.speed)) * 0.05; // Minimal default animation
-                        
+
                         // Use audio data if available - very subtle
                         if (isPlaying && audioData.length > 0) {
                             const audioIndex = Math.floor((index / plants.length) * audioData.length);
                             audioLevel = audioData[audioIndex] * 1.5; // Minimal amplification
                         }
-                        
+
                         const plantHeight = plant.height * (0.95 + audioLevel * 0.15); // Minimal height variation
                         const sway = Math.sin(time * plant.speed * 0.5 + plant.phase) * 3 * plant.sway; // Very gentle swaying
-                        
+
                         ctx.save();
                         ctx.translate(plant.x, canvas.height - 20);
-                        
+
                         // Draw stem with more pronounced curve
                         ctx.beginPath();
                         ctx.moveTo(0, 0);
-                        
+
                         const segmentHeight = plantHeight / plant.segments;
                         for (let i = 1; i <= plant.segments; i++) {
                             const segmentSway = Math.sin(time * plant.speed * 0.5 + i * 0.5 + plant.phase) * 8;
@@ -1037,17 +1042,17 @@
                             const cp2y = -(i * segmentHeight * 0.8);
                             const x = (i / plant.segments) * sway;
                             const y = -i * segmentHeight;
-                            
+
                             ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
                         }
-                        
+
                         // More vibrant stem color
                         ctx.strokeStyle = `hsla(${plant.hue}, ${plant.saturation + 10}%, ${plant.lightness + (audioLevel * 10)}%, 0.9)`;
                         ctx.lineWidth = 2 + audioLevel * 2;
                         ctx.lineCap = 'round';
                         ctx.lineJoin = 'round';
                         ctx.stroke();
-                        
+
                         // Draw leaves with more dramatic size changes
                         if (plant.segments > 2) {
                             // Add multiple leaves along the stem
@@ -1056,27 +1061,27 @@
                                 const leafY = -leafPos * segmentHeight;
                                 const leafSize = 8 + audioLevel * 10; // Smaller leaves with less variation
                                 const leafAngle = 0.3 + (audioLevel * 0.1); // Much less rotation
-                                
+
                                 // Left leaf
                                 ctx.save();
                                 ctx.translate((leafPos / plant.segments) * sway, leafY);
                                 ctx.rotate(-leafAngle);
-                                drawLeaf(leafSize, plant.hue, 
-                                        plant.saturation + 20,
-                                        plant.lightness + 15 + (audioLevel * 15));
+                                drawLeaf(leafSize, plant.hue,
+                                    plant.saturation + 20,
+                                    plant.lightness + 15 + (audioLevel * 15));
                                 ctx.restore();
-                                
+
                                 // Right leaf
                                 ctx.save();
                                 ctx.translate((leafPos / plant.segments) * sway, leafY);
                                 ctx.rotate(leafAngle);
-                                drawLeaf(leafSize, plant.hue, 
-                                        plant.saturation + 20, 
-                                        plant.lightness + 15 + (audioLevel * 15));
+                                drawLeaf(leafSize, plant.hue,
+                                    plant.saturation + 20,
+                                    plant.lightness + 15 + (audioLevel * 15));
                                 ctx.restore();
                             }
                         }
-                        
+
                         // Draw flower at the top - extremely subtle
                         // Show flowers rarely
                         const randomBloom = Math.sin(time + plant.phase) > 0.85; // Less frequent blooming
@@ -1084,13 +1089,13 @@
                             // Tiny flowers with minimal variation
                             const flowerSize = 3 + audioLevel * 5; // Minimal size
                             const flowerHue = plant.flowerHue || (plant.hue + 180) % 360;
-                            
+
                             // Flower center
                             ctx.beginPath();
                             ctx.arc(sway, -plantHeight, flowerSize, 0, Math.PI * 2);
                             ctx.fillStyle = `hsla(${flowerHue}, ${plant.saturation + 20}%, ${plant.lightness + 20}%, 0.8)`;
                             ctx.fill();
-                            
+
                             // Petals with more subtle animation
                             const petalCount = 5; // Fixed count instead of variable
                             for (let i = 0; i < petalCount; i++) {
@@ -1102,20 +1107,20 @@
                                 const petalDistance = flowerSize * 1.3;
                                 const x = Math.cos(angle) * petalDistance + sway;
                                 const y = Math.sin(angle) * petalDistance - plantHeight;
-                                
+
                                 ctx.beginPath();
                                 ctx.ellipse(
                                     x, y,
                                     petalSize, petalSize * 0.6, // Less elongated
                                     angle, 0, Math.PI * 2
                                 );
-                                
+
                                 // More subtle colors
                                 const petalHue = (flowerHue + i * 20) % 360; // Less variation
                                 ctx.fillStyle = `hsla(${petalHue}, ${plant.saturation + 30}%, ${plant.lightness + 20}%, 0.7)`;
                                 ctx.fill();
                             }
-                            
+
                             // Add pollen particles only occasionally
                             if (audioLevel > 0.3 && Math.random() > 0.7) {
                                 for (let i = 0; i < 3; i++) { // Fewer particles
@@ -1124,7 +1129,7 @@
                                     const distance = flowerSize * (1 + Math.random());
                                     const x = Math.cos(angle) * distance + sway;
                                     const y = Math.sin(angle) * distance - plantHeight;
-                                    
+
                                     ctx.beginPath();
                                     ctx.arc(x, y, particleSize, 0, Math.PI * 2);
                                     ctx.fillStyle = `hsla(${flowerHue - 20}, 90%, 75%, 0.5)`;
@@ -1132,7 +1137,7 @@
                                 }
                             }
                         }
-                        
+
                         ctx.restore();
                     });
                 } catch (error) {
@@ -1141,17 +1146,17 @@
                     drawGarden();
                 }
             }
-            
+
             // Initialize volume displays
             document.getElementById('padVolume-value').textContent = '70%';
             document.getElementById('melodyVolume-value').textContent = '60%';
             document.getElementById('rhythmVolume-value').textContent = '50%';
-            
+
             // Initialize audio on first user interaction
             const playButton = document.getElementById('playButton');
             const stopButton = document.getElementById('stopButton');
             let audioInitialized = false;
-            
+
             // Initialize everything when the play button is clicked
             playButton.addEventListener('click', async () => {
                 if (!audioInitialized) {
@@ -1159,16 +1164,16 @@
                     playButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="10" y1="15" x2="10" y2="9"></line><line x1="14" y1="15" x2="14" y2="9"></line></svg> Loading...';
                     playButton.disabled = true;
                     updateStatus('Initializing audio...');
-                    
+
                     try {
                         // Create audio context on user gesture
                         await Tone.start();
                         console.log('Audio context started');
-                        
+
                         // Initialize audio components
                         await initAudio();
                         audioInitialized = true;
-                        
+
                         // Start playback
                         togglePlayback();
                     } catch (error) {
@@ -1182,14 +1187,14 @@
                     togglePlayback();
                 }
             });
-            
+
             // Set up stop button
             stopButton.addEventListener('click', () => {
                 if (audioInitialized && isPlaying) {
                     togglePlayback();
                 }
             });
-            
+
             // Enable play button
             playButton.disabled = false;
             stopButton.disabled = true;
@@ -1197,4 +1202,5 @@
         });
     </script>
 </body>
+
 </html>
