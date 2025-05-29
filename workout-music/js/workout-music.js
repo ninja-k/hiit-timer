@@ -184,6 +184,7 @@ export class WorkoutMusic {
         this.styleSelect = document.getElementById('styleSelect');
         this.voiceCuesCheckbox = document.getElementById('voiceCues');
         this.statusElement = document.getElementById('status');
+        this.testMaskingBtn = document.getElementById('test-masking');
         
         // Set initial UI state
         this.startBtn.disabled = true;
@@ -193,6 +194,14 @@ export class WorkoutMusic {
         this.initBtn.addEventListener('click', () => this.initializeAudio());
         this.startBtn.addEventListener('click', () => this.start());
         this.stopBtn.addEventListener('click', () => this.stop());
+        
+        // Add test button for frequency masking visualization
+        if (this.testMaskingBtn) {
+            this.testMaskingBtn.addEventListener('click', () => this.testFrequencyMasking());
+            console.log('Test masking button listener added');
+        } else {
+            console.warn('Test masking button not found in the DOM');
+        }
         
         // Update BPM and transport when slider changes
         this.bpmRange.addEventListener('input', (e) => {
@@ -321,9 +330,6 @@ export class WorkoutMusic {
             }
         };
 
-        // Create dynamic EQ for each instrument
-        this.createDynamicEQs();
-        
         // Add master compressor
         this.masterCompressor = new Tone.Compressor({
             threshold: -20,   // dB
@@ -448,6 +454,9 @@ export class WorkoutMusic {
                 instrument.volume.value = -12; // Start with lower volume
             }
         });
+        
+        // Now that instruments are initialized, create the dynamic EQs
+        this.createDynamicEQs();
         
         console.log('Audio nodes initialized');
         
@@ -670,10 +679,16 @@ export class WorkoutMusic {
     createDynamicEQs() {
         console.log('Creating dynamic EQs for frequency masking...');
         
+        // Debug: List all available instruments
+        console.log('Available instruments:', Object.keys(this.instruments));
+        
         // Create a dynamic EQ for each instrument
         for (const instrumentName of Object.keys(this.instrumentFrequencyRanges)) {
             // Skip if instrument doesn't exist in our setup
-            if (!this.instruments[instrumentName]) continue;
+            if (!this.instruments[instrumentName]) {
+                console.log(`Skipping dynamic EQ for ${instrumentName} - instrument not found`);
+                continue;
+            }
             
             const range = this.instrumentFrequencyRanges[instrumentName];
             
@@ -786,7 +801,7 @@ export class WorkoutMusic {
         this.dynamicEQ[playingInstrument].primary.gain.linearRampToValueAtTime(0, now + 0.15);
         
         // Log frequency masking activity (only log occasionally to avoid console spam)
-        if (Math.random() < 0.05) { // Log only 5% of the time
+        if (Math.random() < 0.1) { // Log 10% of the time to reduce console spam
             console.log(`Frequency masking: ${playingInstrument} playing`, {
                 primaryFreq: this.dynamicEQ[playingInstrument].primary.frequency.value.toFixed(0) + 'Hz',
                 boost: `+${boostAmount}dB`,
@@ -794,10 +809,10 @@ export class WorkoutMusic {
                     `${i.name} @ ${i.frequency.toFixed(0)}Hz (${i.duckAmount}dB)`
                 )
             });
-            
-            // Update visualization if available
-            this.updateFrequencyMaskingVisualization(playingInstrument, maskedInstruments);
         }
+        
+        // Always update visualization when an instrument plays
+        this.updateFrequencyMaskingVisualization(playingInstrument, maskedInstruments);
     }
     
     /**
@@ -808,7 +823,12 @@ export class WorkoutMusic {
     updateFrequencyMaskingVisualization(playingInstrument, maskedInstruments) {
         // Check if visualization element exists
         const vizElement = document.getElementById('frequency-masking-viz');
-        if (!vizElement) return;
+        if (!vizElement) {
+            console.warn('Frequency masking visualization element not found!');
+            return;
+        }
+        
+        console.log('Updating frequency masking visualization for:', playingInstrument);
         
         // Create a simple visualization of the frequency spectrum
         const freqSpectrum = document.createElement('div');
@@ -880,6 +900,70 @@ export class WorkoutMusic {
         const logFreq = Math.log10(Math.max(20, Math.min(20000, freq)));
         
         return ((logFreq - minFreq) / (maxFreq - minFreq)) * 100;
+    }
+    
+    /**
+     * Test the frequency masking visualization with simulated instrument plays
+     */
+    testFrequencyMasking() {
+        console.log('Testing frequency masking visualization...');
+        
+        // Create a test visualization element if it doesn't exist
+        if (!document.getElementById('frequency-masking-viz')) {
+            const container = document.querySelector('.visualization-container');
+            if (!container) {
+                console.error('Visualization container not found!');
+                return;
+            }
+            
+            const vizElement = document.createElement('div');
+            vizElement.id = 'frequency-masking-viz';
+            vizElement.className = 'frequency-viz';
+            container.appendChild(vizElement);
+            console.log('Created test visualization element');
+        }
+        
+        // Simulate playing different instruments in sequence
+        const instruments = ['kick', 'snare', 'hihat', 'bass'];
+        let index = 0;
+        
+        // Display test message
+        this.updateStatus('Testing frequency masking visualization...');
+        
+        // Create test masking data
+        const testMasking = () => {
+            if (index >= instruments.length) index = 0;
+            const instrument = instruments[index];
+            
+            console.log(`Test playing ${instrument}`);
+            
+            // Create simulated masking data
+            const maskedInstruments = [];
+            for (const otherInstrument of instruments) {
+                if (otherInstrument !== instrument) {
+                    maskedInstruments.push({
+                        name: otherInstrument,
+                        frequency: Math.random() * 2000 + 100, // Random frequency between 100-2100Hz
+                        duckAmount: -3
+                    });
+                }
+            }
+            
+            // Update visualization with test data
+            this.updateFrequencyMaskingVisualization(instrument, maskedInstruments);
+            
+            index++;
+        };
+        
+        // Run test every 500ms
+        testMasking();
+        const testInterval = setInterval(testMasking, 500);
+        
+        // Stop after 5 seconds
+        setTimeout(() => {
+            clearInterval(testInterval);
+            this.updateStatus('Frequency masking test complete');
+        }, 5000);
     }
     
     // Play a specific instrument sound with style-specific variations
