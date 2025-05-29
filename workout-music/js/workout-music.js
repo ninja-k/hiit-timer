@@ -274,6 +274,17 @@ export class WorkoutMusic {
             distortion: new Tone.Distortion(0.4),
             bitCrusher: new Tone.BitCrusher(4)
         };
+
+        // Add master compressor
+        this.masterCompressor = new Tone.Compressor({
+            threshold: -20,   // dB
+            ratio: 4,        // 4:1 ratio
+            attack: 0.003,   // 3ms attack
+            release: 0.1     // 100ms release
+        }).toDestination();
+
+        // Connect reverb to master compressor
+        this.effects.reverb.chain(this.masterCompressor);
         
         // Create instrument nodes (without connecting to destination)
         this.instruments = {
@@ -478,8 +489,8 @@ export class WorkoutMusic {
         this.effects.distortion.chain(
             this.effects.bitCrusher,
             this.effects.delay,
-            this.effects.reverb,
-            Tone.Destination
+            this.effects.reverb
+            // Note: reverb is already connected to masterCompressor in initializeAudioNodes
         );
         
         // Connect instruments through effects
