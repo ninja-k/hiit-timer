@@ -272,7 +272,38 @@ export class WorkoutMusic {
                 wet: 0.3
             }),
             distortion: new Tone.Distortion(0.4),
-            bitCrusher: new Tone.BitCrusher(4)
+            bitCrusher: new Tone.BitCrusher(4),
+            // Add high-pass filter to clean up subsonic frequencies
+            highPass: new Tone.Filter({
+                type: "highpass",
+                frequency: 30,  // 30Hz high-pass to remove rumble
+                rolloff: -12,   // 12dB/octave rolloff
+                Q: 0.5
+            }),
+            // Style-specific EQ
+            eq: {
+                edm: new Tone.EQ3({
+                    low: 2,      // Boost bass slightly
+                    mid: 0,
+                    high: 1,     // Slight high-end boost
+                    lowFrequency: 250,
+                    highFrequency: 2500
+                }),
+                rock: new Tone.EQ3({
+                    low: 1,
+                    mid: 2,      // Boost mids for guitar presence
+                    high: 1,
+                    lowFrequency: 200,
+                    highFrequency: 3000
+                }),
+                hiphop: new Tone.EQ3({
+                    low: 3,      // Strong bass boost
+                    mid: -1,     // Slight mid cut
+                    high: 0,
+                    lowFrequency: 100,
+                    highFrequency: 2000
+                })
+            }
         };
 
         // Add master compressor
@@ -535,31 +566,46 @@ export class WorkoutMusic {
             this.effects.bitCrusher.wet.value = 0;
         }
         
-        // Connect all effects in the desired order
-        this.effects.distortion.chain(
-            this.effects.bitCrusher,
-            this.effects.delay,
-            this.effects.reverb
-            // Note: reverb is already connected to masterCompressor in initializeAudioNodes
-        );
+        // Get the current style's EQ
+        const styleEQ = this.effects.eq[this.currentStyle] || this.effects.eq.edm;
         
         // Connect instruments through effects
-        Object.values(this.instruments).forEach(instrument => {
+        for (const [name, instrument] of Object.entries(this.instruments)) {
             // Disconnect any existing connections
             instrument.disconnect();
             
-            // Connect instrument to the effect chain
-            if (style.effects.distortion) {
-                instrument.connect(this.effects.distortion);
-            } else if (style.effects.bitCrusher) {
-                instrument.connect(this.effects.bitCrusher);
+            // Special handling for kick - don't apply high-pass as strongly
+            if (name === 'kick') {
+                instrument.chain(
+                    new Tone.Filter(60, "highpass"),  // Lighter high-pass for kick
+                    styleEQ,
+                    this.effects.distortion,
+                    this.effects.bitCrusher,
+                    this.effects.delay,
+                    this.effects.reverb,
+                    this.masterCompressor
+                );
             } else {
-                // If no distortion or bitcrusher, connect directly to delay
-                instrument.connect(this.effects.delay);
+                // Connect other instruments through the standard chain
+                instrument.chain(
+                    this.effects.highPass,  // First apply high-pass
+                    styleEQ,                 // Then style-specific EQ
+                    this.effects.distortion,
+                    this.effects.bitCrusher,
+                    this.effects.delay,
+                    this.effects.reverb,
+                    this.masterCompressor   // End with master compressor
+                );
             }
+        }
+        
+        console.log(`Applied ${this.currentStyle} EQ settings`, {
+            low: styleEQ.low,
+            mid: styleEQ.mid,
+            high: styleEQ.high
         });
         
-        console.log(`Applied ${style.name} effects to instruments`, {
+        console.log('Effects updated:', {
             reverb: this.effects.reverb.decay,
             delay: this.effects.delay.wet.value,
             distortion: style.effects.distortion || 'off',
@@ -682,12 +728,26 @@ export class WorkoutMusic {
                 // Play current step
                 this.playStep(this.currentPattern[this.currentStep]);
                 
-                // Update beat counter and speak if needed
+                // Create a simple beep for beat counting
                 if (this.voiceCues && this.currentStep % 2 === 0) {
-                    const beatNumber = (this.currentStep / 2) + 1;
-                    this.speak(`Beat ${beatNumber}`);
-                }
-                
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(
+                        this.currentStep % 8 === 0 ? 800 : 400, // Higher pitch for beat 1
+                        this.audioContext.currentTime
+                    );
+                    
+                    gainNode.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.start();
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                }              
                 // Move to next step
                 this.currentStep = (this.currentStep + 1) % this.patternLength;
                 
@@ -738,15 +798,15 @@ export class WorkoutMusic {
     speak(text) {
         if (!this.voiceCues) return;
         
-        // Cancel any current speech
+        // Cancel any ongoing speech
         if (this.speechSynthesis.speaking) {
             this.speechSynthesis.cancel();
         }
         
-        // Create and speak the utterance
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
+        utterance.rate = 1.0;  // Normal speed
+        utterance.pitch = 1.0; // Normal pitch
+        utterance.volume = 0.7; // Slightly lower volume
         
         // Try to get a nice voice
         const voices = this.speechSynthesis.getVoices();
@@ -759,6 +819,7 @@ export class WorkoutMusic {
         }
         
         this.speechSynthesis.speak(utterance);
+        console.log(`Speaking: ${text}`);
     }
     
     /**
