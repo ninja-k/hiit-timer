@@ -283,8 +283,31 @@ export class WorkoutMusic {
             release: 0.1     // 100ms release
         }).toDestination();
 
+        // Create sidechain compressor for bass
+        this.sidechainCompressor = new Tone.Compressor({
+            threshold: -30,   // dB
+            ratio: 12,        // Strong compression
+            attack: 0.001,    // 1ms attack (very fast)
+            release: 0.25      // 250ms release for pumping effect
+        });
+
+        // Create a gain node to control the sidechain amount
+        this.sidechainGain = new Tone.Gain(0.5); // 50% reduction when triggered
+        
+        // Create a click to trigger the sidechain (tied to kick)
+        this.sidechainClick = new Tone.Oscillator({
+            type: 'sine',
+            frequency: 1, // Very low frequency
+            volume: -100  // Silent
+        }).start();
+        
+        // Connect click to sidechain
+        this.sidechainClick.connect(this.sidechainCompressor);
+        
         // Connect reverb to master compressor
         this.effects.reverb.chain(this.masterCompressor);
+        
+        // Set up bass routing after instruments are created
         
         // Create instrument nodes (without connecting to destination)
         this.instruments = {
@@ -378,6 +401,33 @@ export class WorkoutMusic {
         });
         
         console.log('Audio nodes initialized');
+        
+        // Set up sidechain after instruments are created
+        this.setupSidechain();
+    }
+    
+    // Set up sidechain compression for bass
+    setupSidechain() {
+        if (!this.instruments.bass || !this.sidechainCompressor || !this.sidechainGain) {
+            console.warn('Cannot set up sidechain: required nodes not initialized');
+            return;
+        }
+        
+        try {
+            // Disconnect bass from any previous connections
+            this.instruments.bass.disconnect();
+            
+            // Route bass through sidechain
+            this.instruments.bass.chain(
+                this.sidechainCompressor,
+                this.sidechainGain,
+                this.masterCompressor
+            );
+            
+            console.log('Sidechain effect set up for bass');
+        } catch (error) {
+            console.error('Error setting up sidechain:', error);
+        }
     }
     
     /**
@@ -537,10 +587,22 @@ export class WorkoutMusic {
                     this.instruments.kick.envelope.attack = 0.01;
                     this.instruments.kick.envelope.decay = 0.5;
                     this.instruments.kick.triggerAttackRelease('C1', '8n', playTime, velocity * 1.2);
+                    // Trigger sidechain on kick for EDM
+                    if (this.sidechainGain) {
+                        this.sidechainGain.gain.cancelScheduledValues(playTime);
+                        this.sidechainGain.gain.setValueAtTime(0.5, playTime); // 50% volume
+                        this.sidechainGain.gain.linearRampToValueAtTime(1.0, playTime + 0.25); // Back to 100% over 250ms
+                    }
                 } else if (this.currentStyle === 'hiphop') {
                     this.instruments.kick.envelope.attack = 0.02;
                     this.instruments.kick.envelope.decay = 0.8;
                     this.instruments.kick.triggerAttackRelease('F1', '16n', playTime, velocity * 0.9);
+                    // Trigger sidechain on kick for Hip Hop
+                    if (this.sidechainGain) {
+                        this.sidechainGain.gain.cancelScheduledValues(playTime);
+                        this.sidechainGain.gain.setValueAtTime(0.3, playTime); // 70% volume reduction
+                        this.sidechainGain.gain.linearRampToValueAtTime(1.0, playTime + 0.2); // Back to 100% over 200ms
+                    }
                 } else {
                     this.instruments.kick.triggerAttackRelease('C1', '8n', playTime, velocity);
                 }
