@@ -28,40 +28,116 @@ export class WorkoutMusic {
         this.stylePresets = {
             edm: {
                 name: 'EDM',
-                instruments: ['kick', 'snare', 'hihat', 'bass'],
+                instruments: ['kick', 'snare', 'hihat', 'bass', 'chords', 'lead'],
                 pattern: [
-                    // Kick, Snare, HiHat, Bass
-                    [1, 0, 1, 1], [0, 0, 1, 0], [0, 0, 1, 1], [1, 0, 1, 0],
-                    [1, 1, 1, 0], [0, 0, 1, 1], [1, 0, 1, 0], [0, 1, 1, 1]
+                    // Kick, Snare, HiHat, Bass, Chords, Lead
+                    [1,0,1,1,1,0], [0,0,1,0,0,0], [0,0,1,1,0,0], [1,0,1,0,0,1],
+                    [1,1,1,0,0,0], [0,0,1,1,0,0], [1,0,1,0,1,0], [0,1,1,1,0,0]
+                ],
+                chordProgressions: [
+                    // I - V - vi - IV (EDM classic)
+                    [
+                        ['C3', 'E3', 'G3'], ['G3', 'B3', 'D4'], 
+                        ['A3', 'C4', 'E4'], ['F3', 'A3', 'C4']
+                    ],
+                    // vi - IV - I - V (Emotional)
+                    [
+                        ['A3', 'C4', 'E4'], ['F3', 'A3', 'C4'],
+                        ['C3', 'E3', 'G3'], ['G3', 'B3', 'D4']
+                    ]
+                ],
+                bassNotes: ['C2', 'G2', 'A2', 'F2'],
+                leadPattern: [
+                    ['C4', 'D4', 'E4', 'F4'],
+                    ['E4', 'F4', 'G4', 'A4'],
+                    ['G4', 'A4', 'B4', 'C5'],
+                    ['A4', 'G4', 'F4', 'E4']
                 ],
                 baseFrequency: 110,
                 bpmRange: { min: 120, max: 150 },
                 intensityMultiplier: 1.6,
-                swing: 0.2
+                swing: 0.2,
+                effects: {
+                    reverb: 0.3,
+                    delay: 0.2,
+                    distortion: 0.1
+                }
             },
             rock: {
                 name: 'Rock',
-                instruments: ['kick', 'snare', 'hihat', 'guitar'],
+                instruments: ['kick', 'snare', 'hihat', 'guitar', 'bass', 'chords'],
                 pattern: [
-                    [1, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 1, 1],
-                    [1, 0, 0, 1], [0, 0, 1, 0], [1, 1, 0, 0], [0, 0, 1, 1]
+                    // Kick, Snare, HiHat, Guitar, Bass, Chords
+                    [1,0,0,1,1,0], [0,0,1,0,0,0], [0,1,0,0,0,0], [0,0,1,1,0,1],
+                    [1,0,0,0,1,0], [0,0,1,0,0,0], [1,1,0,1,0,1], [0,0,1,0,0,0],
+                    [1,0,0,1,1,0], [0,0,1,0,0,0], [0,1,0,0,0,0], [0,0,1,1,0,1],
+                    [1,0,0,0,1,0], [0,0,1,0,0,0], [1,1,0,1,0,1], [0,0,1,0,1,0]
+                ],
+                chordProgressions: [
+                    // I - V - vi - IV (Rock classic)
+                    [
+                        ['E3', 'G#3', 'B3'], ['B3', 'D#4', 'F#4'],
+                        ['C#4', 'E4', 'G#4'], ['A3', 'C#4', 'E4']
+                    ],
+                    // I - IV - V - IV (Rock and Roll)
+                    [
+                        ['E3', 'G#3', 'B3'], ['A3', 'C#4', 'E4'],
+                        ['B3', 'D#4', 'F#4'], ['A3', 'C#4', 'E4']
+                    ]
+                ],
+                bassNotes: ['E2', 'B2', 'C#3', 'A2'],
+                leadPattern: [
+                    ['E4', 'F#4', 'G#4', 'A4'],
+                    ['G#4', 'A4', 'B4', 'C#5'],
+                    ['B4', 'C#5', 'D#5', 'E5'],
+                    ['A4', 'G#4', 'F#4', 'E4']
                 ],
                 baseFrequency: 150,
                 bpmRange: { min: 90, max: 120 },
-                intensityMultiplier: 1.2
+                intensityMultiplier: 1.2,
+                swing: 0.1,
+                effects: {
+                    reverb: 0.4,
+                    delay: 0.1,
+                    distortion: 0.6
+                }
             },
             hiphop: {
                 name: 'Hip Hop',
-                instruments: ['kick', 'snare', 'hihat', 'bass'],
+                instruments: ['kick', 'snare', 'hihat', 'bass', 'chords', 'fx'],
                 pattern: [
-                    // More syncopated kick pattern, off-beat snares
-                    [1, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0], [1, 0, 1, 0],
-                    [0, 0, 0, 1], [1, 0, 1, 0], [0, 1, 0, 1], [0, 0, 1, 0]
+                    // Kick, Snare, HiHat, Bass, Chords, FX
+                    [1,0,1,1,1,0], [0,0,1,0,0,0], [0,1,0,0,0,0], [1,0,1,0,0,1],
+                    [0,0,1,1,0,0], [1,0,1,0,0,0], [0,1,0,0,1,0], [0,0,1,0,0,1],
+                    [1,0,1,1,1,0], [0,0,1,0,0,0], [0,1,0,0,0,0], [1,0,1,0,0,1],
+                    [0,0,1,1,0,0], [1,0,1,0,0,0], [0,1,0,0,1,0], [0,0,1,0,0,1]
+                ],
+                chordProgressions: [
+                    // i - VII - v - VI (Hip Hop minor)
+                    [
+                        ['F#3', 'A3', 'C#4'], ['E3', 'G#3', 'B3'],
+                        ['C#3', 'E3', 'G#3'], ['D#3', 'F#3', 'A#3']
+                    ],
+                    // i - iv - v - VII (Trap progression)
+                    [
+                        ['F#3', 'A3', 'C#4'], ['B3', 'D#4', 'F#4'],
+                        ['C#4', 'E4', 'G#4'], ['E3', 'G#3', 'B3']
+                    ]
+                ],
+                bassNotes: ['F#1', 'E1', 'C#2', 'D#2'],
+                fxPattern: [
+                    'vinyl_scratch', 'none', 'none', 'snare_roll',
+                    'none', 'none', 'riser', 'none'
                 ],
                 baseFrequency: 75,
                 bpmRange: { min: 75, max: 105 },
                 intensityMultiplier: 0.9,
-                swing: 0.3
+                swing: 0.3,
+                effects: {
+                    reverb: 0.5,
+                    delay: 0.4,
+                    bitCrusher: 4
+                }
             }
         };
         
@@ -78,10 +154,17 @@ export class WorkoutMusic {
         // Initialize UI
         this.initializeUI();
         
-        // Initialize audio context
-        this.initializeAudioNodes();
+        console.log('WorkoutMusic instance created');
         
-        console.log('WorkoutMusic instance created and initialized');
+        // Initialize audio nodes after user interaction
+        this.initializeAudioNodes = this.initializeAudioNodes.bind(this);
+        
+        // Set up event listeners for audio initialization
+        document.addEventListener('click', () => {
+            if (!this.initialized) {
+                this.initializeAudio();
+            }
+        }, { once: true });
     }
     
     /**
@@ -174,6 +257,121 @@ export class WorkoutMusic {
     /**
      * Initialize the audio context
      */
+    /**
+     * Initialize audio nodes for all instruments
+     */
+    initializeAudioNodes() {
+        console.log('Initializing audio nodes...');
+        
+        // Initialize shared effects
+        this.effects = {
+            reverb: new Tone.Reverb(2),
+            delay: new Tone.PingPongDelay({
+                delayTime: "8n",
+                feedback: 0.4,
+                wet: 0.3
+            }),
+            distortion: new Tone.Distortion(0.4),
+            bitCrusher: new Tone.BitCrusher(4)
+        };
+        
+        // Create instrument nodes (without connecting to destination)
+        this.instruments = {
+            kick: new Tone.MembraneSynth({
+                pitchDecay: 0.05,
+                envelope: {
+                    attack: 0.001,
+                    decay: 0.4,
+                    sustain: 0.01,
+                    release: 0.1
+                }
+            }),
+            
+            snare: new Tone.NoiseSynth({
+                noise: { type: 'white' },
+                envelope: {
+                    attack: 0.001,
+                    decay: 0.2,
+                    sustain: 0.01,
+                    release: 0.2
+                }
+            }),
+            
+            hihat: new Tone.MetalSynth({
+                frequency: 200,
+                envelope: {
+                    attack: 0.001,
+                    decay: 0.1,
+                    release: 0.01
+                },
+                harmonicity: 5.1,
+                modulationIndex: 32,
+                resonance: 4000,
+                octaves: 1.5
+            }),
+            
+            bass: new Tone.MonoSynth({
+                oscillator: { type: 'sine' },
+                envelope: {
+                    attack: 0.01,
+                    decay: 0.3,
+                    sustain: 0.5,
+                    release: 0.5
+                }
+            }),
+            
+            guitar: new Tone.PolySynth(Tone.Synth, {
+                envelope: {
+                    attack: 0.02,
+                    decay: 0.5,
+                    sustain: 0.3,
+                    release: 0.5
+                }
+            }),
+            
+            chords: new Tone.PolySynth(Tone.Synth, {
+                envelope: {
+                    attack: 0.5,
+                    decay: 0.5,
+                    sustain: 0.5,
+                    release: 0.5
+                }
+            }),
+            
+            lead: new Tone.MonoSynth({
+                oscillator: { type: 'sawtooth' },
+                envelope: {
+                    attack: 0.01,
+                    decay: 0.1,
+                    sustain: 0.5,
+                    release: 0.2
+                }
+            }),
+            
+            fx: new Tone.NoiseSynth({
+                noise: { type: 'pink' },
+                envelope: {
+                    attack: 0.01,
+                    decay: 0.1,
+                    sustain: 0.01,
+                    release: 0.1
+                }
+            })
+        };
+        
+        // Set initial volume levels
+        Object.values(this.instruments).forEach(instrument => {
+            if (instrument.volume) {
+                instrument.volume.value = -12; // Start with lower volume
+            }
+        });
+        
+        console.log('Audio nodes initialized');
+    }
+    
+    /**
+     * Initialize the audio context
+     */
     initializeAudio = async () => {
         // Prevent multiple initializations
         if (this.initializing) {
@@ -205,9 +403,15 @@ export class WorkoutMusic {
             this.updateStatus('Audio initialized. Click Start to begin your workout!');
             this.speak('Audio initialized. Ready to start your workout!');
             
-            // Initialize Tone.js after user interaction
+            // Initialize Tone.js and audio nodes
             await Tone.start();
             console.log('Tone.js started');
+            
+            // Initialize audio nodes after Tone.js is ready
+            this.initializeAudioNodes();
+            
+            // Set up effects for each style
+            this.setupStyleEffects();
             
         } catch (error) {
             console.error('Error initializing audio:', error);
@@ -215,70 +419,6 @@ export class WorkoutMusic {
         }
     }
     
-    /**
-     * Start the workout music
-     */
-    // Initialize audio nodes for different instruments
-    initializeAudioNodes() {
-        // Create audio nodes for each instrument type
-        this.instruments = {
-            kick: new Tone.MembraneSynth({
-                pitchDecay: 0.05,
-            }).toDestination(),
-            
-            snare: new Tone.NoiseSynth({
-                noise: {
-                    type: 'white',
-                },
-                envelope: {
-                    attack: 0.001,
-                    decay: 0.2,
-                    sustain: 0.1,
-                    release: 0.1,
-                }
-            }).toDestination(),
-            
-            hihat: new Tone.MetalSynth({
-                frequency: 200,
-                envelope: {
-                    attack: 0.001,
-                    decay: 0.1,
-                    release: 0.01
-                },
-                harmonicity: 5.1,
-                modulationIndex: 32,
-                resonance: 4000,
-                octaves: 1.5
-            }).toDestination(),
-            
-            bass: new Tone.MonoSynth({
-                oscillator: {
-                    type: 'sine'
-                },
-                envelope: {
-                    attack: 0.1,
-                    decay: 0.3,
-                    sustain: 0.4,
-                    release: 0.2
-                }
-            }).toDestination(),
-            
-            guitar: new Tone.PolySynth(Tone.Synth, {
-                oscillator: {
-                    type: 'fatsawtooth',
-                    count: 3,
-                    spread: 30
-                },
-                envelope: {
-                    attack: 0.01,
-                    decay: 0.1,
-                    sustain: 0.5,
-                    release: 0.4,
-                    attackCurve: 'exponential'
-                }
-            }).toDestination()
-        };
-    }
     
     // Update the current pattern based on style and intensity
     updatePattern() {
@@ -310,8 +450,68 @@ export class WorkoutMusic {
         });
     }
     
+    /**
+     * Set up style-specific effects for instruments
+     */
+    setupStyleEffects() {
+        const style = this.stylePresets[this.currentStyle];
+        
+        // Update effect parameters based on style
+        this.effects.reverb.decay = style.effects.reverb || 0.3;
+        this.effects.delay.wet.value = style.effects.delay || 0;
+        
+        // Configure distortion/bitcrusher based on style
+        if (style.effects.distortion) {
+            this.effects.distortion.wet.value = 1;
+            this.effects.distortion.distortion = style.effects.distortion;
+            this.effects.bitCrusher.wet.value = 0;
+        } else if (style.effects.bitCrusher) {
+            this.effects.bitCrusher.wet.value = 1;
+            this.effects.bitCrusher.bits = style.effects.bitCrusher;
+            this.effects.distortion.wet.value = 0;
+        } else {
+            this.effects.distortion.wet.value = 0;
+            this.effects.bitCrusher.wet.value = 0;
+        }
+        
+        // Connect all effects in the desired order
+        this.effects.distortion.chain(
+            this.effects.bitCrusher,
+            this.effects.delay,
+            this.effects.reverb,
+            Tone.Destination
+        );
+        
+        // Connect instruments through effects
+        Object.values(this.instruments).forEach(instrument => {
+            // Disconnect any existing connections
+            instrument.disconnect();
+            
+            // Connect instrument to the effect chain
+            if (style.effects.distortion) {
+                instrument.connect(this.effects.distortion);
+            } else if (style.effects.bitCrusher) {
+                instrument.connect(this.effects.bitCrusher);
+            } else {
+                // If no distortion or bitcrusher, connect directly to delay
+                instrument.connect(this.effects.delay);
+            }
+        });
+        
+        console.log(`Applied ${style.name} effects to instruments`, {
+            reverb: this.effects.reverb.decay,
+            delay: this.effects.delay.wet.value,
+            distortion: style.effects.distortion || 'off',
+            bitCrusher: style.effects.bitCrusher || 'off'
+        });
+    }
+    
     // Play a specific instrument sound with style-specific variations
     playInstrument(instrument, velocity) {
+        if (!this.instruments[instrument]) {
+            console.warn(`Instrument ${instrument} not found`);
+            return;
+        }
         const now = Tone.now();
         const style = this.stylePresets[this.currentStyle];
         const swing = style.swing || 0;
