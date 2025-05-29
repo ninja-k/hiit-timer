@@ -263,6 +263,21 @@ export class WorkoutMusic {
     initializeAudioNodes() {
         console.log('Initializing audio nodes...');
         
+        // Define frequency ranges for each instrument for frequency masking
+        this.instrumentFrequencyRanges = {
+            kick: { primary: [40, 120], secondary: [120, 250] },    // Sub-bass to low-mids
+            snare: { primary: [180, 600], secondary: [2000, 8000] }, // Low-mids and high snap
+            hihat: { primary: [6000, 16000], secondary: [2000, 6000] }, // High frequencies
+            bass: { primary: [60, 250], secondary: [250, 500] },    // Low frequencies
+            guitar: { primary: [300, 1500], secondary: [1500, 4000] }, // Mids
+            chords: { primary: [250, 2000], secondary: [2000, 5000] }, // Wide mid range
+            lead: { primary: [800, 4000], secondary: [4000, 8000] },  // Upper mids
+            fx: { primary: [2000, 10000], secondary: [500, 2000] }   // Mostly highs
+        };
+        
+        // Initialize dynamic EQ for frequency masking
+        this.dynamicEQ = {};
+        
         // Initialize shared effects
         this.effects = {
             reverb: new Tone.Reverb(2),
@@ -306,6 +321,9 @@ export class WorkoutMusic {
             }
         };
 
+        // Create dynamic EQ for each instrument
+        this.createDynamicEQs();
+        
         // Add master compressor
         this.masterCompressor = new Tone.Compressor({
             threshold: -20,   // dB
@@ -574,10 +592,25 @@ export class WorkoutMusic {
             // Disconnect any existing connections
             instrument.disconnect();
             
+            // Get dynamic EQ for this instrument if available
+            const dynamicEQ = this.dynamicEQ[name];
+            
             // Special handling for kick - don't apply high-pass as strongly
             if (name === 'kick') {
-                instrument.chain(
-                    new Tone.Filter(60, "highpass"),  // Lighter high-pass for kick
+                const chain = [
+                    new Tone.Filter(60, "highpass")  // Lighter high-pass for kick
+                ];
+                
+                // Add dynamic EQ if available
+                if (dynamicEQ) {
+                    chain.push(dynamicEQ.primary);
+                    chain.push(dynamicEQ.secondary);
+                    // Add competing bands
+                    dynamicEQ.competing.forEach(comp => chain.push(comp.band));
+                }
+                
+                // Add the rest of the effects
+                chain.push(
                     styleEQ,
                     this.effects.distortion,
                     this.effects.bitCrusher,
@@ -585,10 +618,25 @@ export class WorkoutMusic {
                     this.effects.reverb,
                     this.masterCompressor
                 );
+                
+                // Connect the chain
+                instrument.chain(...chain);
             } else {
                 // Connect other instruments through the standard chain
-                instrument.chain(
-                    this.effects.highPass,  // First apply high-pass
+                const chain = [
+                    this.effects.highPass  // First apply high-pass
+                ];
+                
+                // Add dynamic EQ if available
+                if (dynamicEQ) {
+                    chain.push(dynamicEQ.primary);
+                    chain.push(dynamicEQ.secondary);
+                    // Add competing bands
+                    dynamicEQ.competing.forEach(comp => chain.push(comp.band));
+                }
+                
+                // Add the rest of the effects
+                chain.push(
                     styleEQ,                 // Then style-specific EQ
                     this.effects.distortion,
                     this.effects.bitCrusher,
@@ -596,6 +644,9 @@ export class WorkoutMusic {
                     this.effects.reverb,
                     this.masterCompressor   // End with master compressor
                 );
+                
+                // Connect the chain
+                instrument.chain(...chain);
             }
         }
         
@@ -613,6 +664,224 @@ export class WorkoutMusic {
         });
     }
     
+    /**
+     * Create dynamic EQs for frequency masking between instruments
+     */
+    createDynamicEQs() {
+        console.log('Creating dynamic EQs for frequency masking...');
+        
+        // Create a dynamic EQ for each instrument
+        for (const instrumentName of Object.keys(this.instrumentFrequencyRanges)) {
+            // Skip if instrument doesn't exist in our setup
+            if (!this.instruments[instrumentName]) continue;
+            
+            const range = this.instrumentFrequencyRanges[instrumentName];
+            
+            // Create a 5-band parametric EQ for each instrument
+            this.dynamicEQ[instrumentName] = {
+                // Main band for primary frequency range
+                primary: new Tone.Filter({
+                    type: "peaking",
+                    frequency: (range.primary[0] + range.primary[1]) / 2, // Center frequency
+                    Q: 1.0,
+                    gain: 0 // Initial gain (will be adjusted dynamically)
+                }),
+                // Secondary band
+                secondary: new Tone.Filter({
+                    type: "peaking",
+                    frequency: (range.secondary[0] + range.secondary[1]) / 2,
+                    Q: 1.0,
+                    gain: 0
+                }),
+                // Competing bands - will be used to duck frequencies when other instruments play
+                competing: []
+            };
+            
+            console.log(`Created dynamic EQ for ${instrumentName}`, {
+                primaryFreq: this.dynamicEQ[instrumentName].primary.frequency.value,
+                secondaryFreq: this.dynamicEQ[instrumentName].secondary.frequency.value
+            });
+        }
+        
+        // Set up competing bands by analyzing frequency overlaps
+        for (const [name1, eq1] of Object.entries(this.dynamicEQ)) {
+            for (const [name2, eq2] of Object.entries(this.dynamicEQ)) {
+                // Skip comparing an instrument with itself
+                if (name1 === name2) continue;
+                
+                const range1 = this.instrumentFrequencyRanges[name1];
+                const range2 = this.instrumentFrequencyRanges[name2];
+                
+                // Check if primary ranges overlap
+                if (this.rangesOverlap(range1.primary, range2.primary)) {
+                    // Create a competing band for instrument 1 at instrument 2's primary frequency
+                    const competingBand = new Tone.Filter({
+                        type: "peaking",
+                        frequency: (range2.primary[0] + range2.primary[1]) / 2,
+                        Q: 1.2, // Slightly narrower Q for more precise ducking
+                        gain: 0  // Initial gain
+                    });
+                    
+                    eq1.competing.push({
+                        instrument: name2,
+                        band: competingBand,
+                        range: range2.primary
+                    });
+                    
+                    console.log(`Added competing band for ${name1} against ${name2}`);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Check if two frequency ranges overlap
+     */
+    rangesOverlap(range1, range2) {
+        return (range1[0] <= range2[1] && range1[1] >= range2[0]);
+    }
+    
+    /**
+     * Apply frequency masking when an instrument plays
+     * @param {string} playingInstrument - The instrument that is currently playing
+     */
+    applyFrequencyMasking(playingInstrument) {
+        if (!this.dynamicEQ[playingInstrument]) return;
+        
+        const now = Tone.now();
+        const playingRange = this.instrumentFrequencyRanges[playingInstrument];
+        
+        // Boost the playing instrument's primary frequency range slightly
+        const boostAmount = 2; // +2dB boost
+        this.dynamicEQ[playingInstrument].primary.gain.setValueAtTime(boostAmount, now);
+        
+        // Track which instruments are being masked for debugging
+        const maskedInstruments = [];
+        
+        // For each instrument, check if it competes with the playing instrument
+        for (const [name, eq] of Object.entries(this.dynamicEQ)) {
+            // Skip the playing instrument
+            if (name === playingInstrument) continue;
+            
+            // Check competing bands
+            for (const competing of eq.competing) {
+                if (competing.instrument === playingInstrument) {
+                    // Duck the competing frequency range
+                    const duckAmount = -3; // -3dB cut
+                    competing.band.gain.cancelScheduledValues(now);
+                    competing.band.gain.setValueAtTime(duckAmount, now);
+                    competing.band.gain.linearRampToValueAtTime(0, now + 0.1); // Return to normal over 100ms
+                    
+                    // Add to masked instruments for logging
+                    maskedInstruments.push({
+                        name,
+                        frequency: competing.band.frequency.value,
+                        duckAmount
+                    });
+                }
+            }
+        }
+        
+        // Schedule the playing instrument's boost to return to normal
+        this.dynamicEQ[playingInstrument].primary.gain.linearRampToValueAtTime(0, now + 0.15);
+        
+        // Log frequency masking activity (only log occasionally to avoid console spam)
+        if (Math.random() < 0.05) { // Log only 5% of the time
+            console.log(`Frequency masking: ${playingInstrument} playing`, {
+                primaryFreq: this.dynamicEQ[playingInstrument].primary.frequency.value.toFixed(0) + 'Hz',
+                boost: `+${boostAmount}dB`,
+                maskedInstruments: maskedInstruments.map(i => 
+                    `${i.name} @ ${i.frequency.toFixed(0)}Hz (${i.duckAmount}dB)`
+                )
+            });
+            
+            // Update visualization if available
+            this.updateFrequencyMaskingVisualization(playingInstrument, maskedInstruments);
+        }
+    }
+    
+    /**
+     * Update visualization for frequency masking (if UI element exists)
+     * @param {string} playingInstrument - Currently playing instrument
+     * @param {Array} maskedInstruments - Instruments being masked
+     */
+    updateFrequencyMaskingVisualization(playingInstrument, maskedInstruments) {
+        // Check if visualization element exists
+        const vizElement = document.getElementById('frequency-masking-viz');
+        if (!vizElement) return;
+        
+        // Create a simple visualization of the frequency spectrum
+        const freqSpectrum = document.createElement('div');
+        freqSpectrum.style.width = '100%';
+        freqSpectrum.style.height = '50px';
+        freqSpectrum.style.background = 'linear-gradient(to right, #1a1a2e, #16213e, #0f3460, #e94560)';
+        freqSpectrum.style.position = 'relative';
+        freqSpectrum.style.marginTop = '5px';
+        freqSpectrum.style.borderRadius = '3px';
+        
+        // Add playing instrument marker
+        const playingEQ = this.dynamicEQ[playingInstrument];
+        if (playingEQ) {
+            const primaryFreq = playingEQ.primary.frequency.value;
+            const marker = document.createElement('div');
+            const position = this.logFreqToPosition(primaryFreq);
+            
+            marker.style.position = 'absolute';
+            marker.style.left = `${position}%`;
+            marker.style.top = '0';
+            marker.style.width = '3px';
+            marker.style.height = '100%';
+            marker.style.backgroundColor = '#00ff00';
+            marker.title = `${playingInstrument}: ${primaryFreq.toFixed(0)}Hz`;
+            
+            freqSpectrum.appendChild(marker);
+        }
+        
+        // Add masked instrument markers
+        maskedInstruments.forEach(inst => {
+            const marker = document.createElement('div');
+            const position = this.logFreqToPosition(inst.frequency);
+            
+            marker.style.position = 'absolute';
+            marker.style.left = `${position}%`;
+            marker.style.top = '0';
+            marker.style.width = '3px';
+            marker.style.height = '100%';
+            marker.style.backgroundColor = '#ff0000';
+            marker.title = `${inst.name}: ${inst.frequency.toFixed(0)}Hz (${inst.duckAmount}dB)`;
+            
+            freqSpectrum.appendChild(marker);
+        });
+        
+        // Clear previous visualization and add new one
+        vizElement.innerHTML = '';
+        vizElement.appendChild(freqSpectrum);
+        
+        // Add legend
+        const legend = document.createElement('div');
+        legend.style.fontSize = '10px';
+        legend.style.marginTop = '2px';
+        legend.innerHTML = `<span style="color:#00ff00">▮</span> ${playingInstrument} playing | 
+                           <span style="color:#ff0000">▮</span> masked frequencies | 
+                           20Hz ← → 20kHz`;
+        
+        vizElement.appendChild(legend);
+    }
+    
+    /**
+     * Convert frequency to position on logarithmic scale (20Hz-20kHz)
+     * @param {number} freq - Frequency in Hz
+     * @returns {number} - Position as percentage (0-100)
+     */
+    logFreqToPosition(freq) {
+        // Convert to logarithmic scale between 20Hz and 20kHz
+        const minFreq = Math.log10(20);
+        const maxFreq = Math.log10(20000);
+        const logFreq = Math.log10(Math.max(20, Math.min(20000, freq)));
+        
+        return ((logFreq - minFreq) / (maxFreq - minFreq)) * 100;
+    }
+    
     // Play a specific instrument sound with style-specific variations
     playInstrument(instrument, velocity) {
         if (!this.instruments[instrument]) {
@@ -626,6 +895,9 @@ export class WorkoutMusic {
         // Apply swing timing (delays even-numbered 16th notes)
         const swingTime = (this.currentStep % 2 === 1) ? swing * 0.1 : 0;
         const playTime = now + swingTime;
+        
+        // Apply frequency masking when this instrument plays
+        this.applyFrequencyMasking(instrument);
         
         switch(instrument) {
             case 'kick':

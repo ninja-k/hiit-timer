@@ -92,7 +92,45 @@
         </div>
 
         <div class="status" id="status">Click 'Initialize Audio' to begin</div>
+        
+        <!-- Frequency Masking Visualization -->
+        <div class="visualization-container">
+            <h3>Dynamic Frequency Masking</h3>
+            <div id="frequency-masking-viz" class="frequency-viz">
+                <div class="placeholder">Frequency masking visualization will appear here when audio is playing</div>
+            </div>
+        </div>
     </div>
+
+    <style>
+        .visualization-container {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #2a2a3a;
+            border-radius: 5px;
+        }
+        
+        .visualization-container h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #ddd;
+        }
+        
+        .frequency-viz {
+            height: 80px;
+            background-color: #1a1a2e;
+            border-radius: 3px;
+            padding: 10px;
+            position: relative;
+        }
+        
+        .placeholder {
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+            padding-top: 30px;
+        }
+    </style>
 
     <!-- App script is loaded above -->
 </body>
