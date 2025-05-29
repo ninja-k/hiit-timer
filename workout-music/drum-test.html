@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drum Sound Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            min-height: 20px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 500px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Drum Sound Test</h1>
+    <p>This page tests the drum sounds directly using Tone.js</p>
+    
+    <div id="status">Ready to initialize</div>
+    
+    <button id="initAudio">Initialize Audio</button>
+    
+    <div class="controls">
+        <button id="testKick" disabled>Test Kick</button>
+        <button id="testSnare" disabled>Test Snare</button>
+        <button id="testHihat" disabled>Test Hi-hat</button>
+        <button id="testAll" disabled>Test All Drums</button>
+    </div>
+    
+    <div id="log" class="log"></div>
+    
+    <script>
+        // Get UI elements
+        const initButton = document.getElementById('initAudio');
+        const testKickButton = document.getElementById('testKick');
+        const testSnareButton = document.getElementById('testSnare');
+        const testHihatButton = document.getElementById('testHihat');
+        const testAllButton = document.getElementById('testAll');
+        const statusElement = document.getElementById('status');
+        const logElement = document.getElementById('log');
+        
+        // Drum objects
+        let kick = null;
+        let snare = null;
+        let hihat = null;
+        
+        // Update status
+        function updateStatus(message) {
+            statusElement.textContent = message;
+            console.log(message);
+            logMessage(message);
+        }
+        
+        // Log message
+        function logMessage(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `${timestamp}: ${message}<br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        // Initialize audio
+        initButton.addEventListener('click', async () => {
+            try {
+                updateStatus('Initializing audio...');
+                initButton.disabled = true;
+                
+                // Start Tone.js
+                await Tone.start();
+                updateStatus('Audio context started, context state: ' + Tone.context.state);
+                
+                // Create kick drum
+                kick = new Tone.MembraneSynth({
+                    pitchDecay: 0.05,
+                    octaves: 5,
+                    oscillator: { type: 'sine' },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.4,
+                        sustain: 0.01,
+                        release: 0.4
+                    }
+                }).toDestination();
+                
+                // Create snare drum
+                snare = new Tone.NoiseSynth({
+                    noise: { type: 'white' },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.2,
+                        sustain: 0.02,
+                        release: 0.2
+                    }
+                }).toDestination();
+                
+                // Create hi-hat
+                hihat = new Tone.MetalSynth({
+                    frequency: 200,
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.1,
+                        release: 0.01
+                    },
+                    harmonicity: 5.1,
+                    modulationIndex: 32,
+                    resonance: 4000,
+                    octaves: 1.5
+                }).toDestination();
+                
+                // Set volumes
+                kick.volume.value = 0;   // Full volume
+                snare.volume.value = -2; // Slightly reduced
+                hihat.volume.value = -6; // Reduced more
+                
+                updateStatus('Drums created and ready');
+                
+                // Enable test buttons
+                testKickButton.disabled = false;
+                testSnareButton.disabled = false;
+                testHihatButton.disabled = false;
+                testAllButton.disabled = false;
+                
+            } catch (error) {
+                console.error('Error initializing audio:', error);
+                updateStatus('Error: ' + error.message);
+                initButton.disabled = false;
+                logMessage('ERROR: ' + error.message);
+            }
+        });
+        
+        // Test kick drum
+        testKickButton.addEventListener('click', () => {
+            if (!kick) {
+                updateStatus('Kick drum not initialized');
+                return;
+            }
+            
+            updateStatus('Playing kick drum...');
+            try {
+                const now = Tone.now();
+                kick.triggerAttackRelease('C1', '16n', now);
+                logMessage('Kick drum played at pitch C1');
+            } catch (error) {
+                updateStatus('Error playing kick: ' + error.message);
+                logMessage('ERROR playing kick: ' + error.message);
+            }
+        });
+        
+        // Test snare drum
+        testSnareButton.addEventListener('click', () => {
+            if (!snare) {
+                updateStatus('Snare drum not initialized');
+                return;
+            }
+            
+            updateStatus('Playing snare drum...');
+            try {
+                const now = Tone.now();
+                snare.triggerAttackRelease('16n', now);
+                logMessage('Snare drum played');
+            } catch (error) {
+                updateStatus('Error playing snare: ' + error.message);
+                logMessage('ERROR playing snare: ' + error.message);
+            }
+        });
+        
+        // Test hi-hat
+        testHihatButton.addEventListener('click', () => {
+            if (!hihat) {
+                updateStatus('Hi-hat not initialized');
+                return;
+            }
+            
+            updateStatus('Playing hi-hat...');
+            try {
+                const now = Tone.now();
+                hihat.triggerAttackRelease('16n', now);
+                logMessage('Hi-hat played');
+            } catch (error) {
+                updateStatus('Error playing hi-hat: ' + error.message);
+                logMessage('ERROR playing hi-hat: ' + error.message);
+            }
+        });
+        
+        // Test all drums
+        testAllButton.addEventListener('click', () => {
+            if (!kick || !snare || !hihat) {
+                updateStatus('Drums not initialized');
+                return;
+            }
+            
+            updateStatus('Testing all drums...');
+            
+            try {
+                const now = Tone.now();
+                
+                // Play kick immediately
+                kick.triggerAttackRelease('C1', '16n', now);
+                logMessage('Kick drum played');
+                
+                // Play snare after 200ms
+                setTimeout(() => {
+                    try {
+                        snare.triggerAttackRelease('16n', Tone.now());
+                        logMessage('Snare drum played');
+                    } catch (e) {
+                        logMessage('ERROR playing snare: ' + e.message);
+                    }
+                }, 200);
+                
+                // Play hi-hat after 400ms
+                setTimeout(() => {
+                    try {
+                        hihat.triggerAttackRelease('16n', Tone.now());
+                        logMessage('Hi-hat played');
+                        updateStatus('All drums tested');
+                    } catch (e) {
+                        logMessage('ERROR playing hi-hat: ' + e.message);
+                    }
+                }, 400);
+                
+            } catch (error) {
+                updateStatus('Error testing drums: ' + error.message);
+                logMessage('ERROR testing drums: ' + error.message);
+            }
+        });
+        
+        // Log initial state
+        logMessage('Page loaded. Click "Initialize Audio" to begin.');
+    </script>
+</body>
+</html>

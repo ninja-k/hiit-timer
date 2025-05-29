@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Drum Player</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            min-height: 20px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Drum Player</h1>
+    <p>Click the buttons below to test the drum player</p>
+    
+    <div id="status">Ready to initialize</div>
+    
+    <button id="initAudio">Initialize Audio</button>
+    
+    <div class="controls">
+        <button id="testDrums" disabled>Test Drums</button>
+        <button id="startLoop" disabled>Start Drum Loop</button>
+        <button id="stopLoop" disabled>Stop Drum Loop</button>
+    </div>
+    
+    <script src="simple-drums.js"></script>
+    <script>
+        // Get UI elements
+        const initButton = document.getElementById('initAudio');
+        const testButton = document.getElementById('testDrums');
+        const startButton = document.getElementById('startLoop');
+        const stopButton = document.getElementById('stopLoop');
+        const statusElement = document.getElementById('status');
+        
+        // Update status
+        function updateStatus(message) {
+            statusElement.textContent = message;
+            console.log(message);
+        }
+        
+        // Initialize audio
+        initButton.addEventListener('click', async () => {
+            try {
+                updateStatus('Initializing audio...');
+                initButton.disabled = true;
+                
+                // Start Tone.js
+                await Tone.start();
+                updateStatus('Audio context started, initializing drums...');
+                
+                // Initialize the drum player
+                const success = await simpleDrumPlayer.init();
+                
+                if (success) {
+                    updateStatus('Drums initialized successfully');
+                    testButton.disabled = false;
+                    startButton.disabled = false;
+                } else {
+                    updateStatus('Failed to initialize drums');
+                    initButton.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error initializing audio:', error);
+                updateStatus('Error: ' + error.message);
+                initButton.disabled = false;
+            }
+        });
+        
+        // Test drums
+        testButton.addEventListener('click', () => {
+            updateStatus('Testing drums...');
+            simpleDrumPlayer.testDrums();
+            updateStatus('Drum test complete');
+        });
+        
+        // Start drum loop
+        startButton.addEventListener('click', () => {
+            updateStatus('Starting drum loop...');
+            simpleDrumPlayer.start();
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            updateStatus('Drum loop started');
+        });
+        
+        // Stop drum loop
+        stopButton.addEventListener('click', () => {
+            updateStatus('Stopping drum loop...');
+            simpleDrumPlayer.stop();
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            updateStatus('Drum loop stopped');
+        });
+    </script>
+</body>
+</html>

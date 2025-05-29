@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Audio Test</h1>
+    <p>Click the buttons below to test audio playback</p>
+    
+    <button id="startAudio">Start Audio Context</button>
+    
+    <div class="controls">
+        <button id="testKick">Test Kick Drum</button>
+        <button id="testSnare">Test Snare Drum</button>
+        <button id="testHihat">Test Hi-hat</button>
+        <button id="testBass">Test Bass</button>
+        <button id="testMelody">Test Melody</button>
+    </div>
+    
+    <script>
+        // Initialize audio components
+        let audioStarted = false;
+        let kick, snare, hihat, bass, melody;
+        
+        // Start audio context
+        document.getElementById('startAudio').addEventListener('click', async () => {
+            try {
+                await Tone.start();
+                console.log('Audio context started:', Tone.context.state);
+                
+                // Create drum sounds
+                kick = new Tone.MembraneSynth({
+                    pitchDecay: 0.05,
+                    octaves: 5,
+                    oscillator: { type: 'sine' },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.4,
+                        sustain: 0.01,
+                        release: 0.4
+                    }
+                }).toDestination();
+                kick.volume.value = 0;
+                
+                snare = new Tone.NoiseSynth({
+                    noise: { type: 'white' },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.2,
+                        sustain: 0.02,
+                        release: 0.2
+                    }
+                }).toDestination();
+                snare.volume.value = -2;
+                
+                hihat = new Tone.MetalSynth({
+                    frequency: 200,
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.1,
+                        release: 0.01
+                    },
+                    harmonicity: 5.1,
+                    modulationIndex: 32,
+                    resonance: 4000,
+                    octaves: 1.5
+                }).toDestination();
+                hihat.volume.value = -6;
+                
+                // Create bass and melody synths
+                bass = new Tone.MonoSynth({
+                    oscillator: { type: 'sawtooth' },
+                    envelope: {
+                        attack: 0.01,
+                        decay: 0.3,
+                        sustain: 0.5,
+                        release: 0.5
+                    }
+                }).toDestination();
+                bass.volume.value = -3;
+                
+                melody = new Tone.PolySynth(Tone.Synth).toDestination();
+                melody.volume.value = -4;
+                
+                audioStarted = true;
+                document.getElementById('startAudio').textContent = 'Audio Ready';
+                console.log('All instruments initialized');
+            } catch (error) {
+                console.error('Error starting audio:', error);
+                document.getElementById('startAudio').textContent = 'Error - Try Again';
+            }
+        });
+        
+        // Test kick drum
+        document.getElementById('testKick').addEventListener('click', () => {
+            if (!audioStarted) {
+                alert('Please start audio context first');
+                return;
+            }
+            
+            console.log('Playing kick drum');
+            kick.triggerAttackRelease('C1', '8n');
+        });
+        
+        // Test snare drum
+        document.getElementById('testSnare').addEventListener('click', () => {
+            if (!audioStarted) {
+                alert('Please start audio context first');
+                return;
+            }
+            
+            console.log('Playing snare drum');
+            snare.triggerAttack();
+            setTimeout(() => snare.triggerRelease(), 100);
+        });
+        
+        // Test hi-hat
+        document.getElementById('testHihat').addEventListener('click', () => {
+            if (!audioStarted) {
+                alert('Please start audio context first');
+                return;
+            }
+            
+            console.log('Playing hi-hat');
+            hihat.triggerAttackRelease('G5', '16n');
+        });
+        
+        // Test bass
+        document.getElementById('testBass').addEventListener('click', () => {
+            if (!audioStarted) {
+                alert('Please start audio context first');
+                return;
+            }
+            
+            console.log('Playing bass');
+            bass.triggerAttackRelease('C2', '8n');
+        });
+        
+        // Test melody
+        document.getElementById('testMelody').addEventListener('click', () => {
+            if (!audioStarted) {
+                alert('Please start audio context first');
+                return;
+            }
+            
+            console.log('Playing melody');
+            melody.triggerAttackRelease(['C4', 'E4', 'G4'], '4n');
+        });
+    </script>
+</body>
+</html>

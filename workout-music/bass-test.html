@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bass Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        #log {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bass Instrument Test</h1>
+    <div id="status">Click "Initialize Audio" to begin</div>
+    
+    <div>
+        <button id="initBtn">Initialize Audio</button>
+        <button id="playNoteBtn" disabled>Play Note (C2)</button>
+        <button id="playScaleBtn" disabled>Play Scale</button>
+        <button id="stopBtn" disabled>Stop</button>
+    </div>
+    
+    <h3>Log:</h3>
+    <div id="log"></div>
+    
+    <script>
+        // Global variables
+        let bassSynth = null;
+        let isPlaying = false;
+        let currentNotes = [];
+        
+        // DOM elements
+        const initBtn = document.getElementById('initBtn');
+        const playNoteBtn = document.getElementById('playNoteBtn');
+        const playScaleBtn = document.getElementById('playScaleBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusEl = document.getElementById('status');
+        const logEl = document.getElementById('log');
+        
+        // Helper functions
+        function updateStatus(message) {
+            statusEl.textContent = message;
+            logMessage(message);
+        }
+        
+        function logMessage(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `${timestamp}: ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        // Initialize audio
+        initBtn.addEventListener('click', async () => {
+            try {
+                updateStatus('Initializing audio...');
+                initBtn.disabled = true;
+                
+                // Start Tone.js
+                await Tone.start();
+                updateStatus('Audio context started');
+                
+                // Create bass synth
+                bassSynth = new Tone.MonoSynth({
+                    oscillator: {
+                        type: 'sawtooth',
+                        detune: -1200 // 1 octave down
+                    },
+                    envelope: {
+                        attack: 0.01,
+                        decay: 0.3,
+                        sustain: 0.4,
+                        release: 0.5
+                    },
+                    filterEnvelope: {
+                        attack: 0.001,
+                        decay: 0.2,
+                        sustain: 0.4,
+                        release: 0.4,
+                        baseFrequency: 200,
+                        octaves: 2
+                    }
+                }).toDestination();
+                
+                // Add some effects
+                const distortion = new Tone.Distortion(0.4).toDestination();
+                const reverb = new Tone.Reverb(1.5).toDestination();
+                
+                bassSynth.chain(distortion, reverb, Tone.Destination);
+                
+                // Enable buttons
+                playNoteBtn.disabled = false;
+                playScaleBtn.disabled = false;
+                stopBtn.disabled = false;
+                
+                updateStatus('Bass synth ready');
+                
+            } catch (error) {
+                updateStatus('Error initializing audio: ' + error.message);
+                console.error(error);
+                initBtn.disabled = false;
+            }
+        });
+        
+        // Play a single note
+        playNoteBtn.addEventListener('click', () => {
+            if (!bassSynth || isPlaying) return;
+            
+            try {
+                updateStatus('Playing C2 note');
+                bassSynth.triggerAttackRelease('C2', '8n');
+            } catch (error) {
+                updateStatus('Error playing note: ' + error.message);
+                console.error(error);
+            }
+        });
+        
+        // Play a bass scale
+        playScaleBtn.addEventListener('click', async () => {
+            if (!bassSynth || isPlaying) return;
+            
+            try {
+                isPlaying = true;
+                updateStatus('Playing bass scale...');
+                
+                const now = Tone.now();
+                const notes = ['C2', 'D2', 'E2', 'F2', 'G2', 'A2', 'B2', 'C3'];
+                
+                // Play each note in sequence
+                notes.forEach((note, i) => {
+                    const time = now + (i * 0.5); // 0.5 seconds apart
+                    bassSynth.triggerAttackRelease(note, '8n', time);
+                    logMessage(`Scheduled ${note} at ${time.toFixed(2)}s`);
+                });
+                
+                // Enable stop button after sequence completes
+                setTimeout(() => {
+                    isPlaying = false;
+                    updateStatus('Scale completed');
+                }, notes.length * 500);
+                
+            } catch (error) {
+                isPlaying = false;
+                updateStatus('Error playing scale: ' + error.message);
+                console.error(error);
+            }
+        });
+        
+        // Stop all sounds
+        stopBtn.addEventListener('click', () => {
+            if (bassSynth) {
+                bassSynth.triggerRelease();
+                updateStatus('All sounds stopped');
+                isPlaying = false;
+            }
+        });
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && bassSynth) {
+                bassSynth.triggerRelease();
+                isPlaying = false;
+                updateStatus('Sounds stopped (tab inactive)');
+            }
+        });
+    </script>
+</body>
+</html>
