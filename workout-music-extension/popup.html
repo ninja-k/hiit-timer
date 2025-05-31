@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data:; worker-src 'self' blob:;">
+    <title>Workout Music Player</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Workout Music</h1>
+        
+        <div id="status">Loading...</div>
+        
+        <div class="control-group">
+            <label for="bpm">BPM: <span id="bpm-value">120</span></label>
+            <input type="range" id="bpm" min="60" max="200" value="120" step="1" disabled>
+        </div>
+        
+        <div class="control-group">
+            <label for="intensity">Intensity: <span id="intensity-value">5</span></label>
+            <input type="range" id="intensity" min="1" max="10" value="5" step="1" disabled>
+        </div>
+        
+        <div class="control-group">
+            <label for="style">Style:</label>
+            <select id="style" disabled>
+                <option value="edm">EDM</option>
+                <option value="rock">Rock</option>
+                <option value="hiphop">Hip Hop</option>
+            </select>
+        </div>
+        
+        <div class="button-group">
+            <button id="initBtn" class="btn">Initialize</button>
+            <button id="startBtn" class="btn" disabled>Start</button>
+            <button id="stopBtn" class="btn" disabled>Stop</button>
+        </div>
+        
+        <div id="audio-state">Audio: Not Initialized</div>
+        <div id="cpu-usage">CPU: -</div>
+    </div>
+
+    <!-- Load Tone.js first -->
+    <script src="lib/Tone.js"></script>
+    
+    <!-- Load UI Manager -->
+    <script src="js/UIManager.js" type="module"></script>
+    
+    <!-- Load the main app -->
+    <script src="js/workout-music-fixed.js" type="module"></script>
+    
+    <!-- Load popup.js last -->
+    <script src="js/popup.js" type="module"></script>
+</body>
+</html>
