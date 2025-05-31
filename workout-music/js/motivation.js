@@ -41,6 +41,16 @@ class MotivationSystem {
                 "You just crushed that workout!",
                 "That's how it's done! Amazing job!",
                 "Workout complete! You're a champion!"
+            ],
+            music_intensity: [
+                "Feel the rhythm push you harder!",
+                "Let the beat drive your movements!",
+                "Sync your movements to the tempo!"
+            ],
+            music_transition: [
+                "Changing the vibe for the next round!",
+                "New energy coming your way!",
+                "Shifting gears with the music!"
             ]
         };
         
@@ -48,6 +58,7 @@ class MotivationSystem {
         this.initialized = false;
         this.voices = [];
         this.voiceLoadAttempts = 0;
+        this.audioContext = null;
         
         console.log('[Motivation] Setting up voice synthesis...');
         // Wait for voices to be loaded
@@ -96,60 +107,36 @@ class MotivationSystem {
                 v.lang.startsWith('en-') && 
                 (v.name.toLowerCase().includes('samantha') || 
                  v.name.toLowerCase().includes('victoria') ||
-                 v.name.toLowerCase().includes('female'))
+                 v.name.toLowerCase().includes('female') ||
+                 v.name.toLowerCase().includes('daniel') ||   
+                 v.name.toLowerCase().includes('alex'))       
             );
             
             // Fallback to any English voice with good quality
             if (!voice) {
-                voice = this.voices.find(v => 
-                    v.lang.startsWith('en-') && 
-                    (v.name.includes('Google') || 
-                     v.name.includes('Alex') || 
-                     v.name.includes('Samantha') ||
-                     v.name.includes('Karen') || // Common on macOS
-                     v.name.includes('Daniel')   // Common on macOS
-                    )
-                );
-            }
-            
-            // Fallback to first available English voice
-            if (!voice) {
                 voice = this.voices.find(v => v.lang.startsWith('en-'));
             }
             
-            // Fallback to any available voice
-            if (!voice && this.voices.length > 0) {
-                voice = this.voices[0];
+            if (voice) {
+                this.voice = voice;
+                console.log(`Selected voice: ${voice.name}`);
+            } else {
+                console.warn('No suitable voice found');
             }
             
-            if (this.voices.length > 0) {
-                // Try to find a preferred voice
-                const preferredVoices = this.voices.filter(v => 
-                    v.lang.startsWith('en-') && 
-                    (v.name.toLowerCase().includes('samantha') || 
-                     v.name.toLowerCase().includes('victoria') ||
-                     v.name.toLowerCase().includes('female'))
-                );
-                
-                // Fallback to any English voice with good quality
-                const fallbackVoices = this.voices.filter(v => 
-                    v.lang.startsWith('en-') && 
-                    (v.name.includes('Google') || 
-                     v.name.includes('Alex') || 
-                     v.name.includes('Samantha') ||
-                     v.name.includes('Karen') ||
-                     v.name.includes('Daniel'))
-                );
-                
-                this.voice = preferredVoices[0] || fallbackVoices[0] || this.voices[0];
-                this.initialized = true;
-                console.log('Voice initialized:', this.voice.name, `(${this.voice.lang})`);
-                document.dispatchEvent(new Event('voiceReady'));
-            } else {
-                console.warn('No voices available. Voice synthesis will not work.');
-            }
+            this.initialized = true;
+            this.voiceLoadAttempts = 0;
         } catch (error) {
-            console.error('Error initializing voice synthesis:', error);
+            console.error('Error initializing voice:', error);
+            this.voiceLoadAttempts++;
+            
+            // Retry if we haven't exceeded max attempts
+            if (this.voiceLoadAttempts < 3) {
+                console.log(`Retrying voice initialization (attempt ${this.voiceLoadAttempts})...`);
+                setTimeout(() => this.initVoice(), 1000);
+            } else {
+                console.error('Max voice initialization attempts exceeded');
+            }
         }
     }
     
@@ -246,6 +233,8 @@ class MotivationSystem {
                 msg.onend = resolve;
                 msg.onerror = (event) => {
                     console.error('Speech synthesis error:', event);
+                    // Fallback to playing a musical cue instead
+                    this.playMusicalCue('error_fallback');
                     reject(event);
                 };
                 speechSynthesis.speak(msg);
@@ -264,6 +253,36 @@ class MotivationSystem {
         }
         return phasePhrases[Math.floor(Math.random() * phasePhrases.length)];
     }
+    
+    playMusicalCue(type) {
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // Create an oscillator
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        // Set the oscillator frequency based on the type
+        if (type === 'error_fallback') {
+            oscillator.frequency.value = 300; // low beep
+        } else {
+            oscillator.frequency.value = 800; // default beep
+        }
+
+        // Configure the sound
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.1; // low volume
+
+        // Start and stop the oscillator
+        oscillator.start();
+        oscillator.stop(this.audioContext.currentTime + 0.3); // beep for 0.3 seconds
+
+        console.log(`Playing musical cue for ${type}`);
+    }
 }
 
 // Create the motivation instance
@@ -271,4 +290,6 @@ const motivation = new MotivationSystem();
 
 // Export for both ES modules and browser environment
 export { motivation };
-window.motivation = motivation;
+if (typeof window !== 'undefined') {
+    window.motivation = motivation;
+}

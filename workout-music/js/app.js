@@ -1,4 +1,5 @@
 import { WorkoutMusic } from './workout-music.js';
+import { motivation } from './motivation.js';
 
 // Wait for the DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Store it globally for debugging
         window.workoutMusic = workoutMusic;
+        window.motivation = motivation;
+        
+        // Initialize motivation system
+        motivation.initVoice();
         
         // Handle page visibility changes
         const handleVisibilityChange = () => {

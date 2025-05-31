@@ -100,6 +100,11 @@
             </label>
         </div>
 
+        <div class="control-group">
+            <button id="test-motivation-btn">Test Motivation</button>
+            <button id="test-encouragement-btn">Test Encouragement</button>
+        </div>
+
         <div class="status" id="status">Click 'Initialize Audio' to begin</div>
 
         <!-- Performance Monitor -->
@@ -110,6 +115,33 @@
             </div>
         </div>
     </div>
+
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Import the motivation system
+            const { motivation } = await import('./js/motivation.js');
+
+            document.getElementById('test-motivation-btn').addEventListener('click', async () => {
+                try {
+                    console.log('Testing normal speech...');
+                    await motivation.speak('work');
+                    console.log('Normal speech worked');
+                } catch (error) {
+                    console.error('Normal speech failed:', error);
+                }
+            });
+
+            document.getElementById('test-encouragement-btn').addEventListener('click', async () => {
+                try {
+                    console.log('Testing error fallback...');
+                    motivation.voice = null; // Force no voice selected
+                    await motivation.speak('work');
+                } catch (error) {
+                    console.error('Error fallback test caught error:', error);
+                }
+            });
+        });
+    </script>
 
     <!-- App script is loaded above -->
 </body>
