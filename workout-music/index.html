@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,15 +16,18 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
+
         .container {
             background: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         .control-group {
             margin-bottom: 20px;
         }
+
         button {
             background-color: #4CAF50;
             color: white;
@@ -37,16 +41,20 @@
             cursor: pointer;
             border-radius: 4px;
         }
+
         button:disabled {
             background-color: #cccccc;
         }
+
         label {
             display: block;
             margin: 10px 0 5px;
         }
+
         input[type="range"] {
             width: 100%;
         }
+
         .status {
             margin-top: 20px;
             padding: 10px;
@@ -55,10 +63,11 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Workout Music Player</h1>
-        
+
         <div class="control-group">
             <button id="initBtn">Initialize Audio</button>
             <button id="startBtn" disabled>Start Workout</button>
@@ -92,47 +101,17 @@
         </div>
 
         <div class="status" id="status">Click 'Initialize Audio' to begin</div>
-        
-        <!-- Frequency Masking Visualization -->
-        <div class="visualization-container">
-            <h3>Dynamic Frequency Masking</h3>
-            <div id="frequency-masking-viz" class="frequency-viz">
-                <div class="placeholder">Frequency masking visualization will appear here when audio is playing</div>
+
+        <!-- Performance Monitor -->
+        <div class="control-group">
+            <div id="performance-monitor" style="font-size: 12px; color: #666; margin-top: 10px;">
+                <div>Audio Context: <span id="audio-state">Not initialized</span></div>
+                <div>CPU Usage: <span id="cpu-usage">-</span></div>
             </div>
-            <button id="test-masking" class="btn">Test Frequency Masking</button>
         </div>
     </div>
 
-    <style>
-        .visualization-container {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #2a2a3a;
-            border-radius: 5px;
-        }
-        
-        .visualization-container h3 {
-            margin-top: 0;
-            font-size: 16px;
-            color: #ddd;
-        }
-        
-        .frequency-viz {
-            height: 80px;
-            background-color: #1a1a2e;
-            border-radius: 3px;
-            padding: 10px;
-            position: relative;
-        }
-        
-        .placeholder {
-            color: #666;
-            font-size: 12px;
-            text-align: center;
-            padding-top: 30px;
-        }
-    </style>
-
     <!-- App script is loaded above -->
 </body>
+
 </html>
