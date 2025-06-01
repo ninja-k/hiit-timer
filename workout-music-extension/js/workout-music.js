@@ -61,7 +61,7 @@ export class WorkoutMusic {
     // Update the current pattern based on style and intensity
     updatePattern() {
         if (!this.stylePresets || !this.stylePresets[this.currentStyle]) {
-            console.warn('Invalid style or presets not loaded');
+            console.warn('Invalid style or presets not loaded:', this.currentStyle);
             return;
         }
         
@@ -69,10 +69,24 @@ export class WorkoutMusic {
         this.currentPattern = style.pattern;
         
         if (this.audioManager) {
+            // Store the current playback state
+            const wasPlaying = this.isPlaying;
+            
+            // Stop current playback if it's running
+            if (wasPlaying) {
+                this.audioManager.stopPlayback();
+            }
+            
+            // Update the pattern
             this.audioManager.currentPattern = this.currentPattern;
+            
+            // Restart playback if it was playing
+            if (wasPlaying) {
+                this.audioManager.startPlayback(this.currentPattern, this.bpm);
+            }
         }
         
-        console.log('Pattern updated:', this.currentStyle);
+        console.log('Pattern updated for style:', this.currentStyle);
     }
     
     startPerformanceMonitoring() {}

@@ -222,16 +222,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('style').addEventListener('change', async (e) => {
         const style = e.target.value;
+        console.log('Style changed to:', style);
         
         if (!app) {
             await initializeApp();
         }
         
         if (app) {
+            // Update the style in the app
             app.currentStyle = style;
-            window.currentStyle = style;
+            
+            // Update the pattern with the new style
             app.updatePattern();
+            
+            // Save to storage
             await chrome.storage.sync.set({ style });
+            
+            // Update the window style reference
+            window.currentStyle = style;
+            console.log('Style change completed for:', style);
         }
     });
     

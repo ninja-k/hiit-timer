@@ -1,318 +1,219 @@
-import { stylePresets } from './workout-music-presets.js';
 import { LocalAudioManager } from './LocalAudioManager.js';
 
 class AudioManager {
+    static AUDIO_CONTEXT_OPTIONS = {
+        sampleRate: 44100,
+        latencyHint: 'interactive',
+    };
+
     constructor() {
         this.audioContext = null;
         this.localAudio = new LocalAudioManager();
         this.initialized = false;
         this.isPlaying = false;
-        this.playbackTimer = null;
-        this.currentPattern = null;
+        this.currentPattern = [];
         this.currentBPM = 120;
-        this.currentLoop = null;
+        this.currentStep = 0;
+        this.stepTime = 0;
+        this.noteTime = 0;
+        this.nextStepTime = 0;
+        this.scheduleAheadTime = 0.1; // Schedule 100ms ahead
+        this.lookahead = 0.1; // 100ms - run scheduling loop every 100ms
+        this.scheduleInterval = null;
     }
 
     async initialize() {
+        if (this.initialized) return true;
+
         try {
-            // Initialize the audio context
+            // Create audio context
             const AudioContext = window.AudioContext || window.webkitAudioContext;
-            this.audioContext = new AudioContext();
+            this.audioContext = new AudioContext(AudioManager.AUDIO_CONTEXT_OPTIONS);
             
-            // Initialize the local audio manager
+            // Initialize local audio manager
             await this.localAudio.initialize(this.audioContext);
             
-            this.initialized = true;
-            this.isPlaying = false;
-            this.playbackTimer = null;
+            // Initialize scheduling variables
             this.currentStep = 0;
-            this.stepsPerBeat = 4; // 16th notes
-            this.noteTime = 0.0;
-            this.tempo = 120;
+            this.noteTime = 0;
+            this.nextStepTime = this.audioContext.currentTime;
+            this.isPlaying = false;
             
-            console.log('AudioManager initialized');
+            console.log('AudioManager initialized with sample rate:', this.audioContext.sampleRate);
+            this.initialized = true;
             return true;
+            
         } catch (error) {
             console.error('Error initializing AudioManager:', error);
             this.initialized = false;
-            throw error;
+            throw new Error(`Audio initialization failed: ${error.message}`);
         }
     }
 
     // Start playback of the current pattern
     startPlayback(pattern, bpm = 120) {
         if (!this.initialized) {
-            console.warn('AudioManager not initialized');
-            return;
+            throw new Error('AudioManager not initialized');
         }
         
-        if (this.isPlaying) {
-            this.stopPlayback();
-        }
+        // Stop any existing playback
+        this.stopPlayback();
         
-        this.tempo = bpm;
-        this.currentPattern = pattern || [];
-        this.isPlaying = true;
+        // Set current state
+        this.currentBPM = bpm;
+        this.currentPattern = Array.isArray(pattern) ? pattern : [];
         this.currentStep = 0;
-        this.noteTime = this.audioContext.currentTime + 0.1; // Start slightly in the future
+        this.isPlaying = true;
         
-        // Calculate time per step (in seconds)
-        const secondsPerBeat = 60.0 / this.tempo;
+        // Calculate timing values
+        const now = this.audioContext.currentTime;
+        const secondsPerBeat = 60.0 / this.currentBPM;
         this.stepTime = secondsPerBeat / 4; // 16th notes
+        this.noteTime = now + 0.1; // Start slightly in the future
+        this.nextStepTime = now;
         
+        console.log(`Starting playback at ${this.currentBPM} BPM, step time: ${this.stepTime.toFixed(4)}s`);
+        
+        // Start the scheduling loop
+        this.scheduleInterval = setInterval(() => this.scheduleSteps(), this.lookahead * 1000);
+        
+        // Initial scheduling
         this.scheduleSteps();
     }
     
     // Stop playback
     stopPlayback() {
+        if (!this.isPlaying) return;
+        
         this.isPlaying = false;
+        
+        // Clear scheduling interval
+        if (this.scheduleInterval) {
+            clearInterval(this.scheduleInterval);
+            this.scheduleInterval = null;
+        }
+        
+        // Clear any pending timeouts
         if (this.playbackTimer) {
             clearTimeout(this.playbackTimer);
             this.playbackTimer = null;
         }
+        
+        console.log('Playback stopped');
     }
     
     // Schedule the next steps of the pattern
     scheduleSteps() {
-        if (!this.isPlaying) return;
+        if (!this.isPlaying || !this.currentPattern.length) return;
         
-        const lookahead = 0.1; // Schedule 100ms ahead
         const currentTime = this.audioContext.currentTime;
+        const scheduleAheadTime = 0.1; // Schedule 100ms ahead
         
-        while (this.noteTime < currentTime + lookahead) {
-            this.playStep(this.currentStep);
+        // Schedule notes that fall within the next scheduleAheadTime
+        while (this.noteTime < currentTime + scheduleAheadTime) {
+            const stepStartTime = this.noteTime;
+            
+            // Play the current step
+            if (this.currentPattern[this.currentStep]) {
+                this.playStep(this.currentStep, stepStartTime);
+            }
+            
+            // Move to next step
             this.nextStep();
         }
-        
-        // Schedule next update
-        this.playbackTimer = setTimeout(() => this.scheduleSteps(), lookahead * 1000);
     }
     
     // Play a single step in the pattern
-    playStep(step) {
-        if (!this.currentPattern[step]) return;
+    playStep(stepIndex, time) {
+        const step = this.currentPattern[stepIndex];
+        if (!step || !Array.isArray(step)) return;
         
-        const notes = this.currentPattern[step];
-        const time = this.noteTime;
-        
-        // Play each note in the step
-        for (const [soundName, velocity] of Object.entries(notes)) {
+        // Play each instrument in this step
+        step.forEach((velocity, instrumentIndex) => {
             if (velocity > 0) {
-                this.playDrumSound(soundName, time, velocity);
+                const instrumentName = this.getInstrumentName(instrumentIndex);
+                if (instrumentName) {
+                    this.playDrumSound(instrumentName, time, velocity);
+                }
             }
-        }
+        });
     }
     
     // Move to the next step
     nextStep() {
-        this.currentStep = (this.currentStep + 1) % (this.currentPattern.length || 1);
+        // Move to next step
+        this.currentStep++;
+        
+        // Loop pattern if needed
+        if (this.currentStep >= this.currentPattern.length) {
+            this.currentStep = 0;
+        }
+        
+        // Advance time to next step
         this.noteTime += this.stepTime;
     }
     
-    // Play a drum sound using our local audio manager
-    playDrumSound(soundName, time = 0, velocity = 1.0) {
-        if (!this.initialized) {
-            console.warn('AudioManager not initialized');
+    // Get instrument name by index
+    getInstrumentName(index) {
+        const style = window.currentStyle || 'edm';
+        const instrumentMap = {
+            'hiphop': ['kick', 'snare', 'hihat', 'bass', 'guitar', 'fx', 'chords'],
+            'rock': ['kick', 'snare', 'hihat', 'guitar', 'bass', 'chords'],
+            'edm': ['kick', 'snare', 'hihat', 'bass', 'chords', 'lead']
+        };
+        
+        const instruments = instrumentMap[style] || instrumentMap['edm'];
+        return instruments[index];
+    }
+    
+    // Play a drum sound
+    playDrumSound(instrument, time) {
+        if (!this.initialized || !this.audioContext || !this.localAudio) {
+            console.warn('Audio not initialized or audio context not available');
             return;
         }
 
-        try {
-            // Map sound names to our local audio manager
-            const soundMap = {
-                'kick': 'kick',
-                'snare': 'snare',
-                'hihat': 'hihat',
-                'clap': 'clap',
-                'kick1': 'kick',
-                'snare1': 'snare',
-                'hihat1': 'hihat',
-                'clap1': 'clap',
-                'hh': 'hihat',
-                'oh': 'hihat',
-                'ch': 'hihat',
-                'ride': 'hihat',
-                'tom': 'kick',
-                'tom1': 'kick',
-                'tom2': 'kick',
-                'rim': 'snare',
-                'rim1': 'snare',
-                'rim2': 'snare',
-                'bass': 'kick',
-                'lead': 'hihat',
-                'guitar': 'snare',
-                'fx': 'clap',
-                'chords': 'clap'
-            };
-
-            const mappedSound = soundMap[soundName.toLowerCase()];
-            if (!mappedSound) {
-                console.warn(`No mapping for sound: ${soundName}`);
-                return;
-            }
-
-            // Play the sound using our local audio manager
-            this.localAudio.playSound(mappedSound, time, velocity);
-        } catch (error) {
-            console.error('Error playing drum sound:', error);
-        }
-    }
-
-    // Update the BPM (beats per minute)
-    setBPM(bpm) {
-        console.log(`Setting BPM to ${bpm}`);
-        this.currentBPM = bpm;
+        // List of available drum sounds that we know exist
+        const availableDrums = ['kick', 'snare', 'hihat', 'clap'];
         
-        // If using Tone.js, update it as well
-        if (window.Tone && Tone.Transport) {
-            Tone.Transport.bpm.rampTo(bpm, 0.1);
-        }
-    }
-
-    // Start playback of the pattern
-    startPlayback(pattern, bpm, onStep) {
-        if (!this.initialized) {
-            throw new Error('AudioManager not initialized');
-        }
-
-        try {
-            // Store the current pattern and BPM
-            this.currentPattern = pattern;
-            this.currentBPM = bpm;
-            
-            // Stop any existing playback
-            this.stopPlayback();
-            
-            // Set BPM
-            this.setBPM(bpm);
-            
-            // Get the current style to determine which instruments to use
-            const style = window.currentStyle || 'edm';
-            const instrumentMap = {
-                'hiphop': ['kick', 'snare', 'hihat', 'bass', 'guitar', 'fx', 'chords'],
-                'rock': ['kick', 'snare', 'hihat', 'guitar', 'bass', 'chords'],
-                'edm': ['kick', 'snare', 'hihat', 'bass', 'chords', 'lead']
-            };
-            
-            const instruments = instrumentMap[style] || instrumentMap['edm'];
-            
-            // Calculate timing values
-            const now = this.audioContext.currentTime;
-            const lookahead = 0.1; // Schedule 100ms ahead
-            const scheduleAheadTime = 0.1; // Schedule 100ms of audio
-            const secondsPerBeat = 60 / bpm;
-            const stepsPerBeat = 4; // 16th notes
-            const stepDuration = secondsPerBeat / stepsPerBeat;
-            const patternDuration = pattern.length * stepDuration;
-            
-            console.log(`Starting playback at ${bpm} BPM, step duration: ${stepDuration}s`);
-            console.log(`Pattern duration: ${patternDuration}s`);
-            
-            // Store scheduler state
-            const schedulerState = {
-                currentStep: 0,
-                nextStepTime: now,
-                lastScheduledTime: 0
-            };
-            
-            const scheduleNotes = () => {
-                if (!this.isPlaying) return;
-                
-                const currentTime = this.audioContext.currentTime;
-                
-                // Only schedule if we're not too far ahead
-                if (schedulerState.nextStepTime < currentTime + scheduleAheadTime) {
-                    const stepIndex = schedulerState.currentStep % pattern.length;
-                    const step = pattern[stepIndex];
-                    
-                    if (step && Array.isArray(step)) {
-                        // Call onStep callback with the current step
-                        if (onStep && typeof onStep === 'function') {
-                            onStep(stepIndex);
-                        }
-                        
-                        // Play each instrument in this step
-                        step.forEach((value, i) => {
-                            const instrumentName = instruments[i];
-                            if (value > 0 && instrumentName) {
-                                try {
-                                    this.playDrumSound(instrumentName, schedulerState.nextStepTime, value);
-                                } catch (error) {
-                                    console.error(`Error playing ${instrumentName}:`, error);
-                                }
-                            }
-                        });
-                    }
-                    
-                    // Move to next step
-                    schedulerState.currentStep++;
-                    schedulerState.nextStepTime += stepDuration;
-                    
-                    // Handle pattern looping
-                    if (schedulerState.currentStep >= pattern.length) {
-                        schedulerState.currentStep = 0;
-                    }
-                }
-                
-                // Schedule next frame if we need to
-                if (schedulerState.nextStepTime < currentTime + scheduleAheadTime * 2) {
-                    // If we're running low on scheduled notes, schedule more immediately
-                    scheduleNotes();
-                } else {
-                    // Otherwise, use requestAnimationFrame for better performance
-                    this.animationFrame = requestAnimationFrame(() => {
-                        // Only schedule if we're still playing
-                        if (this.isPlaying) {
-                            scheduleNotes();
-                        }
-                    });
-                }
-            };
-            
-            // Start the scheduler
-            this.isPlaying = true;
-            this.animationFrame = requestAnimationFrame(scheduleNotes);
-            console.log('Playback started');
-            
-        } catch (error) {
-            console.error('Error in startPlayback:', error);
-            this.isPlaying = false;
-            throw error;
-        }
-    }
-
-    // Stop playback
-    stopPlayback() {
-        try {
-            // Clear any scheduled timeouts
-            if (this.playbackTimer) {
-                clearTimeout(this.playbackTimer);
-                this.playbackTimer = null;
+        // Only try to play sounds that we know exist
+        if (availableDrums.includes(instrument)) {
+            try {
+                this.localAudio.playSound(instrument, time);
+            } catch (error) {
+                console.error(`Error playing ${instrument}:`, error);
             }
-            
-            // Stop any ongoing audio
-            if (this.localAudio && typeof this.localAudio.stopAll === 'function') {
-                this.localAudio.stopAll();
-            }
-            
-            // Reset playback state
-            this.isPlaying = false;
-            console.log('Playback stopped');
-            
-        } catch (error) {
-            console.error('Error stopping playback:', error);
-            this.isPlaying = false;
-            throw error;
+        } else {
+            // Silently skip unsupported instruments instead of showing errors
+            // console.log(`Skipping unsupported instrument: ${instrument}`);
         }
     }
-
+    
+    // Set BPM
+    setBPM(bpm) {
+        this.currentBPM = Math.max(40, Math.min(300, bpm)); // Clamp between 40-300 BPM
+        const secondsPerBeat = 60.0 / this.currentBPM;
+        this.stepTime = secondsPerBeat / 4; // 16th notes
+        
+        if (this.isPlaying) {
+            // Restart playback with new BPM
+            this.startPlayback(this.currentPattern, this.currentBPM);
+        }
+    }
+    
     // Clean up resources
     dispose() {
         this.stopPlayback();
+        this.initialized = false;
+        
         if (this.audioContext) {
             this.audioContext.close();
             this.audioContext = null;
         }
-        this.initialized = false;
+        
+        if (this.localAudio) {
+            this.localAudio.dispose();
+        }
     }
 }
 
