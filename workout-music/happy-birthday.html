@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Player</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            color: #333;
+        }
+        
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        h1 {
+            color: #d23f57;
+            margin-bottom: 2rem;
+        }
+        
+        .input-group {
+            margin: 1.5rem 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input[type="text"] {
+            width: 80%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            border-color: #d23f57;
+            outline: none;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        
+        button {
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        #playBtn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        #stopBtn {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .lyrics {
+            margin-top: 2rem;
+            font-style: italic;
+            line-height: 1.8;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎂 Happy Birthday! 🎉</h1>
+        
+        <div class="input-group">
+            <label for="nameInput">Whose birthday is it?</label>
+            <input type="text" id="nameInput" placeholder="Enter a name">
+        </div>
+        
+        <div class="buttons">
+            <button id="playBtn">Play Song</button>
+            <button id="stopBtn">Stop</button>
+        </div>
+        
+        <div class="lyrics">
+            <p>Happy Birthday to you,<br>
+            Happy Birthday to you,<br>
+            Happy Birthday dear <span id="displayName">[Name]</span>,<br>
+            Happy Birthday to you!</p>
+        </div>
+    </div>
+    
+    <script src="happy-birthday.js"></script>
+    <script>
+        // Update displayed name as user types
+        const nameInput = document.getElementById('nameInput');
+        const displayName = document.getElementById('displayName');
+        
+        nameInput.addEventListener('input', (e) => {
+            displayName.textContent = e.target.value || '[Name]';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melody Instrument Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #log {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Melody Instrument Test</h1>
+        
+        <div class="controls">
+            <h3>Audio Setup</h3>
+            <button id="initButton">Initialize Audio</button>
+            <span id="status">Audio not initialized</span>
+        </div>
+
+        <div class="controls">
+            <h3>Melody Synth</h3>
+            <div>
+                <button id="playNoteButton" disabled>Play Note (C4)</button>
+                <button id="playScaleButton" disabled>Play C Major Scale</button>
+                <button id="stopButton" disabled>Stop All Sounds</button>
+            </div>
+            <div style="margin-top: 10px;">
+                <label for="noteDuration">Note Duration (s):</label>
+                <input type="number" id="noteDuration" value="0.2" min="0.1" max="5" step="0.1">
+                <label for="noteVolume">Volume (dB):</label>
+                <input type="range" id="noteVolume" min="-40" max="0" value="-10" step="1">
+                <span id="volumeValue">-10 dB</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Log</h3>
+            <div id="log"></div>
+            <button id="clearLog">Clear Log</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const initButton = document.getElementById('initButton');
+        const playNoteButton = document.getElementById('playNoteButton');
+        const playScaleButton = document.getElementById('playScaleButton');
+        const stopButton = document.getElementById('stopButton');
+        const clearLogButton = document.getElementById('clearLog');
+        const statusSpan = document.getElementById('status');
+        const logDiv = document.getElementById('log');
+        const noteDurationInput = document.getElementById('noteDuration');
+        const noteVolumeInput = document.getElementById('noteVolume');
+        const volumeValueSpan = document.getElementById('volumeValue');
+
+        // Audio components
+        let synth;
+        let isInitialized = false;
+        let activeNotes = new Set();
+
+        // C Major scale
+        const cMajorScale = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'];
+
+        // Logging function
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Initialize audio context and synth
+        async function initAudio() {
+            if (isInitialized) return;
+            
+            try {
+                // Create and connect the synth
+                synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                synth.volume.value = parseFloat(noteVolumeInput.value);
+                
+                // Set some nice defaults for the synth
+                synth.set({
+                    envelope: {
+                        attack: 0.005,
+                        decay: 0.1,
+                        sustain: 0.3,
+                        release: 0.5
+                    },
+                    oscillator: {
+                        type: 'triangle'
+                    }
+                });
+                
+                isInitialized = true;
+                statusSpan.textContent = 'Audio ready';
+                statusSpan.style.color = 'green';
+                
+                // Enable buttons
+                playNoteButton.disabled = false;
+                playScaleButton.disabled = false;
+                stopButton.disabled = false;
+                
+                log('Audio context and synth initialized');
+            } catch (error) {
+                log(`Error initializing audio: ${error.message}`);
+                console.error('Audio initialization error:', error);
+            }
+        }
+
+        // Play a single note
+        function playNote() {
+            if (!isInitialized) return;
+            
+            const note = 'C4';
+            const duration = parseFloat(noteDurationInput.value);
+            
+            try {
+                synth.triggerAttackRelease(note, duration);
+                log(`Playing note: ${note} for ${duration}s`);
+            } catch (error) {
+                log(`Error playing note: ${error.message}`);
+                console.error('Note playback error:', error);
+            }
+        }
+
+        // Play a C major scale
+        async function playScale() {
+            if (!isInitialized) return;
+            
+            const duration = parseFloat(noteDurationInput.value);
+            log('Playing C major scale...');
+            
+            // Use Tone's timing to play notes in sequence
+            const now = Tone.now();
+            cMajorScale.forEach((note, i) => {
+                const time = now + (i * duration * 1.2); // Add some space between notes
+                synth.triggerAttackRelease(note, duration, time);
+            });
+        }
+
+        // Stop all sounds
+        function stopAllSounds() {
+            if (!isInitialized) return;
+            
+            try {
+                synth.releaseAll();
+                log('Stopped all sounds');
+            } catch (error) {
+                log(`Error stopping sounds: ${error.message}`);
+                console.error('Stop sounds error:', error);
+            }
+        }
+
+        // Event Listeners
+        initButton.addEventListener('click', async () => {
+            log('Initializing audio...');
+            await initAudio();
+        });
+        
+        playNoteButton.addEventListener('click', playNote);
+        playScaleButton.addEventListener('click', playScale);
+        stopButton.addEventListener('click', stopAllSounds);
+        
+        clearLogButton.addEventListener('click', () => {
+            logDiv.textContent = '';
+        });
+        
+        // Update volume when slider changes
+        noteVolumeInput.addEventListener('input', () => {
+            if (isInitialized) {
+                synth.volume.value = parseFloat(noteVolumeInput.value);
+            }
+            volumeValueSpan.textContent = `${noteVolumeInput.value} dB`;
+        });
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAllSounds();
+            }
+        });
+        
+        // Initial log
+        log('Page loaded. Click "Initialize Audio" to start.');
+    </script>
+</body>
+</html>

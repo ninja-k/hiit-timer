@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celebration Music Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        #visualizer {
+            width: 100%;
+            height: 150px;
+            background-color: #f1f3f4;
+            border-radius: 5px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        #visualizer-bars {
+            display: flex;
+            height: 100%;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 0 10px;
+        }
+        .bar {
+            width: 10px;
+            background-color: #3498db;
+            margin: 0 2px;
+            border-radius: 3px 3px 0 0;
+            transition: height 0.1s ease-out;
+        }
+        #status {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .status-waiting { background-color: #f1c40f; color: #000; }
+        .status-processing { background-color: #3498db; color: white; }
+        .status-success { background-color: #2ecc71; color: white; }
+        .status-error { background-color: #e74c3c; color: white; }
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        #music-params {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Celebration Music Generator</h1>
+        
+        <div class="input-group">
+            <label for="celebration-text">Describe your celebration:</label>
+            <textarea id="celebration-text" placeholder="E.g., 'It's my daughter's 10th birthday with a unicorn theme!'"></textarea>
+        </div>
+        
+        <div id="controls">
+            <button id="generate-btn">Generate Music</button>
+            <button id="stop-btn" disabled>Stop</button>
+        </div>
+        
+        <div id="visualizer">
+            <div id="visualizer-bars">
+                <!-- Bars will be added by JavaScript -->
+            </div>
+        </div>
+        
+        <div id="status" class="status-waiting">
+            Ready to generate music! Enter a celebration message above.
+        </div>
+        
+        <div id="music-params">
+            <div>Music parameters will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const celebrationText = document.getElementById('celebration-text');
+        const generateBtn = document.getElementById('generate-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const statusDiv = document.getElementById('status');
+        const visualizerBars = document.getElementById('visualizer-bars');
+        const musicParamsDiv = document.getElementById('music-params');
+        
+        // Audio components
+        // Audio context state
+        let audioContextStarted = false;
+        let player;
+        let isPlaying = false;
+        let currentLoop;
+        
+        // Initialize audio after user interaction
+        async function initAudio() {
+            if (!audioContextStarted) {
+                try {
+                    // Start the audio context on first user interaction
+                    await Tone.start();
+                    console.log('Audio context started');
+                    audioContextStarted = true;
+                    
+                    // Initialize player after context is started
+                    player = new Tone.Player({
+                        url: 'sounds/kick.mp3',
+                        onload: function() {
+                            console.log('Audio buffer loaded');
+                            // Enable the generate button when audio is ready
+                            generateBtn.disabled = false;
+                            updateStatus('Ready to generate music!', 'status-success');
+                        },
+                        onerror: function(e) {
+                            console.error('Error loading audio buffer', e);
+                            updateStatus('Error loading audio. Please refresh and try again.', 'status-error');
+                        }
+                    }).toDestination();
+                    
+                    // Initialize synthesizer
+                    window.synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                    window.synth.volume.value = -10; // Lower the volume a bit
+                    
+                    // Initialize bass synth
+                    window.bassSynth = new Tone.MonoSynth({
+                        oscillator: {
+                            type: 'sine'
+                        },
+                        envelope: {
+                            attack: 0.01,
+                            decay: 0.1,
+                            sustain: 0.4,
+                            release: 0.3
+                        }
+                    }).toDestination();
+                    window.bassSynth.volume.value = -15;
+                    
+                    // Initialize drum sampler
+                    window.drumSampler = new Tone.Sampler({
+                        urls: {
+                            A1: 'sounds/kick.mp3',
+                            A2: 'sounds/snare.mp3',
+                            A3: 'sounds/hihat.mp3'
+                        },
+                        onload: function() {
+                            console.log('Drum samples loaded');
+                            window.drumSampler.volume.value = -8; // Adjust drum volume
+                        },
+                        onerror: function(error) {
+                            console.error('Error loading drum samples:', error);
+                        },
+                        release: 1
+                    }).toDestination();
+                    
+                    // Preload other drum samples
+                    const samples = ['snare.mp3', 'hihat.mp3'];
+                    let loadedSamples = 0;
+                    
+                    samples.forEach(sample => {
+                        const buffer = new Tone.ToneAudioBuffer(`sounds/${sample}`, {
+                            onload: () => {
+                                console.log(`Loaded ${sample}`);
+                                loadedSamples++;
+                            },
+                            onerror: (e) => {
+                                console.error(`Error loading ${sample}:`, e);
+                                // Still continue even if some samples fail to load
+                                loadedSamples++;
+                            }
+                        });
+                    });
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Error initializing audio:', error);
+                    updateStatus('Error initializing audio. Please refresh and try again.', 'status-error');
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        // Create visualizer bars
+        function createVisualizerBars() {
+            visualizerBars.innerHTML = '';
+            const barCount = 32;
+            
+            for (let i = 0; i < barCount; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = '10%';
+                bar.style.backgroundColor = getRandomColor();
+                visualizerBars.appendChild(bar);
+            }
+        }
+        
+        // Update visualizer
+        function updateVisualizer() {
+            if (!isPlaying) return;
+            
+            const bars = document.querySelectorAll('.bar');
+            bars.forEach(bar => {
+                const height = 10 + Math.random() * 90;
+                bar.style.height = `${height}%`;
+                bar.style.opacity = 0.5 + (height / 200);
+            });
+            
+            currentLoop = requestAnimationFrame(updateVisualizer);
+        }
+        
+        // Generate a random color
+        function getRandomColor() {
+            const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        // Update status message
+        function updateStatus(message, statusClass) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + statusClass;
+        }
+        
+        // Generate music based on celebration text
+        async function generateMusic() {
+            const text = celebrationText.value.trim();
+            if (!text) {
+                updateStatus('Please enter a celebration message!', 'status-error');
+                return;
+            }
+            
+            // Initialize audio on first interaction
+            try {
+                await initAudio();
+            } catch (e) {
+                console.error('Error initializing audio:', e);
+                alert('Error initializing audio. Please check the console for details.');
+                return;
+            }
+            
+            updateStatus('Generating music parameters...', 'status-processing');
+            generateBtn.disabled = true;
+            stopBtn.disabled = false;
+            
+            try {
+                // In a real implementation, this would call your local Phi instance
+                // For now, we'll use a simple mock response
+                const musicParams = await generateMusicParamsMock(text);
+                
+                // Display the generated parameters
+                musicParamsDiv.innerHTML = `<strong>Generated Parameters:</strong>\n${JSON.stringify(musicParams, null, 2)}`;
+                
+                // Start playing the music
+                playMusic(musicParams);
+                updateStatus('Playing music!', 'status-success');
+                isPlaying = true;
+                updateVisualizer();
+                
+            } catch (error) {
+                console.error('Error generating music:', error);
+                updateStatus('Error generating music. Please try again.', 'status-error');
+                generateBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+        
+        // Enhanced mock function to generate varied and engaging music parameters
+        function generateMusicParamsMock(text) {
+            // Event type detection
+            const isBirthday = text.toLowerCase().includes('birthday');
+            const isAnniversary = text.toLowerCase().includes('anniversary');
+            const isWedding = text.toLowerCase().includes('wedding');
+            const isGraduation = text.toLowerCase().includes('graduation');
+            const isBabyShower = text.toLowerCase().includes('baby shower') || text.toLowerCase().includes('babyshower');
+            
+            // Extract age if mentioned
+            const ageMatch = text.match(/\b(\d{1,2})\s*(?:year|yo|y\/o|years old|year-old)/i);
+            const age = ageMatch ? parseInt(ageMatch[1]) : null;
+            
+            // Theme detection
+            const themes = {
+                space: /\b(space|galaxy|stars|moon|planet|rocket|alien)\b/i,
+                unicorn: /\b(unicorn|rainbow|magic|sparkle|pink|purple)\b/i,
+                dinosaur: /\b(dino|dinosaur|jurassic|prehistoric|fossil)\b/i,
+                superhero: /\b(superhero|marvel|avengers|spiderman|batman|superman|hero|comic)\b/i,
+                princess: /\b(princess|castle|royal|queen|king|prince|fairy tale)\b/i,
+                pirate: /\b(pirate|treasure|ship|sail|island|caribbean|parrot|hook)\b/i
+            };
+            
+            let detectedTheme = 'general';
+            for (const [theme, regex] of Object.entries(themes)) {
+                if (regex.test(text)) {
+                    detectedTheme = theme;
+                    break;
+                }
+            }
+            
+            // Determine musical parameters based on event, age, and theme
+            let style, tempo, key, instruments, mood, structure;
+            const allInstruments = [
+                'piano', 'synth', 'bass', 'drums', 'strings', 'harp', 'guitar', 'xylophone',
+                'glockenspiel', 'flute', 'trumpet', 'saxophone', 'violin', 'cello', 'electric guitar',
+                'organ', 'choir', 'ukulele', 'marimba', 'vibraphone', 'steel drum', 'accordion'
+            ];
+            
+            // Base parameters on event type
+            if (isBirthday) {
+                mood = age < 13 ? 'playful' : age < 20 ? 'energetic' : 'celebratory';
+                tempo = age < 13 ? 140 : age < 20 ? 130 : 120;
+                style = age < 13 ? 'bouncy, cheerful' : age < 20 ? 'upbeat, modern' : 'festive, bright';
+                structure = 'intro-verse-chorus-verse-chorus-bridge-chorus-outro';
+                
+                // Adjust for theme
+                switch(detectedTheme) {
+                    case 'space':
+                        instruments = ['synth', 'piano', 'bass', 'electronic drums', 'theremin'];
+                        style += ', cosmic';
+                        break;
+                    case 'unicorn':
+                        instruments = ['harp', 'glockenspiel', 'flute', 'choir', 'bells'];
+                        style += ', magical';
+                        break;
+                    case 'dinosaur':
+                        instruments = ['tuba', 'trombone', 'timpani', 'bassoon', 'drums'];
+                        style += ', adventurous';
+                        break;
+                    default:
+                        instruments = ['piano', 'bass', 'drums', 'guitar', 'horns'];
+                }
+            } 
+            else if (isWedding) {
+                mood = 'romantic';
+                tempo = 90;
+                style = 'elegant, flowing';
+                structure = 'intro-verse-chorus-verse-chorus-bridge-chorus-outro';
+                instruments = ['piano', 'strings', 'harp', 'flute', 'soft percussion'];
+            }
+            else if (isAnniversary) {
+                mood = 'sentimental';
+                tempo = 80;
+                style = 'smooth, romantic';
+                structure = 'intro-verse-verse-chorus-verse-chorus-outro';
+                instruments = ['piano', 'acoustic guitar', 'strings', 'light percussion'];
+            }
+            else if (isGraduation) {
+                mood = 'triumphant';
+                tempo = 110;
+                style = 'majestic, uplifting';
+                structure = 'fanfare-intro-verse-chorus-verse-chorus-bridge-chorus-outro';
+                instruments = ['trumpet', 'piano', 'strings', 'timpani', 'choir'];
+            }
+            else if (isBabyShower) {
+                mood = 'gentle';
+                tempo = 100;
+                style = 'sweet, lullaby';
+                structure = 'intro-verse-chorus-verse-chorus-outro';
+                instruments = ['music box', 'glockenspiel', 'harp', 'soft strings'];
+            }
+            else {
+                // Default celebration
+                mood = 'joyful';
+                tempo = 120;
+                style = 'upbeat, festive';
+                structure = 'intro-verse-chorus-verse-chorus-bridge-chorus-outro';
+                instruments = ['piano', 'bass', 'drums', 'guitar', 'horns'];
+            }
+            
+            // Add some randomness to tempo and select a random key
+            tempo += Math.floor(Math.random() * 20) - 10; // ±10 bpm variation
+            const majorKeys = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'F', 'Bb', 'Eb', 'Ab', 'Db'];
+            const minorKeys = ['A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'D', 'G', 'C', 'F', 'Bb'];
+            const useMinor = Math.random() > 0.8; // 20% chance of minor key for variety
+            key = useMinor 
+                ? minorKeys[Math.floor(Math.random() * minorKeys.length)] + ' minor'
+                : majorKeys[Math.floor(Math.random() * majorKeys.length)] + ' major';
+            
+            // Add some random instruments if we have room
+            while (instruments.length < 6) {
+                const randomInst = allInstruments[Math.floor(Math.random() * allInstruments.length)];
+                if (!instruments.includes(randomInst)) {
+                    instruments.push(randomInst);
+                }
+            }
+            
+            return {
+                event: isBirthday ? 'birthday' : 
+                      isAnniversary ? 'anniversary' : 
+                      isWedding ? 'wedding' : 
+                      isGraduation ? 'graduation' :
+                      isBabyShower ? 'baby shower' : 'celebration',
+                age: age,
+                theme: detectedTheme,
+                key: key,
+                tempo: Math.max(60, Math.min(180, tempo)), // Keep within 60-180 BPM
+                style: style,
+                mood: mood,
+                instruments: instruments,
+                structure: structure,
+                generatedFrom: text,
+                timestamp: new Date().toISOString()
+            };
+        }
+        
+        // Play music based on parameters
+        function playMusic(params) {
+            // Start audio context on first interaction
+            if (Tone.context.state !== 'running') {
+                Tone.start();
+            }
+            
+            // Set the tempo
+            Tone.Transport.bpm.value = params.tempo;
+            
+            // Simple pattern based on the key and style
+            let key = params.key ? params.key.split(' ')[0].toUpperCase() : 'C';
+            const scale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+            
+            // Ensure the key is valid, fallback to C if not
+            let keyIndex = scale.indexOf(key);
+            if (keyIndex === -1) {
+                console.warn(`Invalid key '${key}', defaulting to C`);
+                key = 'C';
+                keyIndex = 0; // C is at index 0 in the scale
+            }
+            
+            // Create a scale starting from the root key
+            const rotatedScale = [];
+            for (let i = 0; i < scale.length; i++) {
+                rotatedScale.push(scale[(keyIndex + i) % scale.length]);
+            }
+            
+            // Define musical sections (intro, verse, chorus, etc.)
+            const sections = [
+                { name: 'intro', bars: 4 },
+                { name: 'verse1', bars: 8 },
+                { name: 'chorus', bars: 8 },
+                { name: 'verse2', bars: 8 },
+                { name: 'chorus', bars: 8 },
+                { name: 'outro', bars: 4 }
+            ];
+            
+            // Clear any existing scheduled events
+            Tone.Transport.cancel();
+            
+            // Generate patterns for different sections
+            const generateMelody = (startTime, length, baseNote, variation = 0) => {
+                const steps = length * 8; // 8th notes per bar
+                
+                for (let i = 0; i < steps; i++) {
+                    const stepInBars = i / 8; // Convert to bars
+                    const time = startTime + Tone.Time(stepInBars * 4).toSeconds();
+                    
+                    // Create a more interesting melody pattern
+                    const noteIndex = (baseNote + Math.sin(i * 0.5) * 2 + variation) % rotatedScale.length;
+                    const octave = 4 + Math.floor((baseNote + i) / rotatedScale.length);
+                    const note = rotatedScale[Math.abs(Math.floor(noteIndex))] + octave;
+                    
+                    // Add some rhythm variety
+                    const rhythm = i % 4 === 0 ? '4n' : '8n';
+                    
+                    if (window.synth) {
+                        window.synth.triggerAttackRelease(
+                            note,
+                            rhythm,
+                            `+${time}`,
+                            0.4
+                        );
+                    }
+                    
+                    // Add bass notes on downbeats
+                    if (i % 4 === 0 && window.bassSynth) {
+                        const bassNote = rotatedScale[baseNote % rotatedScale.length] + '2';
+                        window.bassSynth.triggerAttackRelease(
+                            bassNote,
+                            '2n',
+                            `+${time}`,
+                            0.3
+                        );
+                    }
+                }
+            };
+            
+            // Generate drum pattern
+            const generateDrums = (startTime, length) => {
+                const steps = length * 8; // 8th notes per bar
+                
+                for (let i = 0; i < steps; i++) {
+                    const time = startTime + Tone.Time((i / 2)).toSeconds();
+                    
+                    // Kick on quarter notes
+                    if (i % 4 === 0 && window.drumSampler) {
+                        window.drumSampler.triggerAttack('A1', `+${time}`, 0.5);
+                    }
+                    
+                    // Snare on backbeat
+                    if (i % 8 === 4 && window.drumSampler) {
+                        window.drumSampler.triggerAttack('A2', `+${time}`, 0.3);
+                    }
+                    
+                    // Hi-hat on 8th notes
+                    if (window.drumSampler && i % 2 === 0) {
+                        window.drumSampler.triggerAttack('A3', `+${time}`, 0.15);
+                    }
+                }
+            };
+            
+            // Schedule all sections
+            let currentTime = 0;
+            sections.forEach((section, sectionIndex) => {
+                // Add some variation to the melody based on section
+                const variation = sectionIndex * 2;
+                
+                // Generate melody for this section
+                generateMelody(currentTime, section.bars, sectionIndex % rotatedScale.length, variation);
+                
+                // Generate drums for this section
+                generateDrums(currentTime, section.bars);
+                
+                // Move time forward by the number of bars in this section
+                currentTime += section.bars * 4; // 4 beats per bar
+            });
+            
+            // Set the total duration to the end of the last section + 1 bar
+            const totalBars = sections.reduce((sum, section) => sum + section.bars, 0);
+            const totalDuration = totalBars * (60 / params.tempo) * 4; // in seconds
+            
+            // Start playback
+            Tone.Transport.start();
+            
+            // Stop after the complete piece
+            Tone.Transport.scheduleOnce(() => {
+                stopMusic();
+            }, `${totalBars}:0:0`);
+        }
+        
+        // Stop music
+        function stopMusic() {
+            if (isPlaying) {
+                Tone.Transport.stop();
+                Tone.Transport.cancel();
+                if (currentLoop) {
+                    currentLoop = null;
+                }
+                isPlaying = false;
+                cancelAnimationFrame(currentLoop);
+                
+                // Reset visualizer
+                const bars = document.querySelectorAll('.bar');
+                bars.forEach(bar => {
+                    bar.style.height = '10%';
+                    bar.style.opacity = '0.5';
+                });
+                
+                updateStatus('Music stopped.', 'status-waiting');
+                generateBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+        
+        // Event Listeners
+        generateBtn.addEventListener('click', generateMusic);
+        stopBtn.addEventListener('click', stopMusic);
+        
+        // Initialize when the page loads
+        window.addEventListener('load', () => {
+            // Initialize audio on first user interaction
+            const initOnInteraction = () => {
+                initAudio();
+                document.removeEventListener('click', initOnInteraction);
+                document.removeEventListener('keydown', initOnInteraction);
+            };
+            
+            document.addEventListener('click', initOnInteraction, { once: true });
+            document.addEventListener('keydown', initOnInteraction, { once: true });
+            
+            // Enable generate button when audio is ready
+            generateBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>

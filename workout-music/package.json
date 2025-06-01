@@ -1,0 +1,14 @@
+{
+  "name": "workout-music",
+  "version": "1.0.0",
+  "description": "Music generation using Cerebras API",
+  "type": "module",
+  "main": "cerebras-music.js",
+  "scripts": {
+    "start": "node cerebras-music.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}

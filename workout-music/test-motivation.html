@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Motivation System</title>
+    <script type="module">
+        import { motivation } from './workout-music/js/motivation.js';
+
+        // Expose for testing in console
+        window.motivation = motivation;
+
+        // Function to test normal speech
+        window.testNormalSpeech = async () => {
+            try {
+                console.log('Testing normal speech...');
+                await motivation.speak('work');
+                console.log('Normal speech worked');
+            } catch (error) {
+                console.error('Normal speech failed:', error);
+            }
+        };
+
+        // Function to test error fallback (by causing an error)
+        window.testErrorFallback = async () => {
+            try {
+                console.log('Testing error fallback...');
+                // Force an error by passing an invalid utterance
+                // We can try to speak without a valid voice by setting motivation.voice to null and then speaking
+                motivation.voice = null; // Force no voice selected
+                await motivation.speak('work');
+            } catch (error) {
+                console.error('Error fallback test caught error:', error);
+            }
+        };
+    </script>
+</head>
+<body>
+    <h1>Test Motivation System</h1>
+    <button onclick="testNormalSpeech()">Test Normal Speech</button>
+    <button onclick="testErrorFallback()">Test Error Fallback (Musical Cue)</button>
+</body>
+</html>

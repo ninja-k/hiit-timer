@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chord Instrument Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        select, input {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        #log {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border-radius: 4px;
+        }
+        .chord-progression {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .chord-button {
+            min-width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chord Instrument Test</h1>
+        
+        <div class="controls">
+            <h3>Audio Setup</h3>
+            <button id="initButton">Initialize Audio</button>
+            <span id="status">Audio not initialized</span>
+        </div>
+
+        <div class="controls">
+            <h3>Chord Player</h3>
+            <div>
+                <button id="playChordButton" disabled>Play Chord</button>
+                <button id="playProgressionButton" disabled>Play Progression</button>
+                <button id="stopButton" disabled>Stop All Sounds</button>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <div>
+                    <label for="rootNote">Root Note:</label>
+                    <select id="rootNote">
+                        <option value="C">C</option>
+                        <option value="C#">C#</option>
+                        <option value="D">D</option>
+                        <option value="D#">D#</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                        <option value="F#">F#</option>
+                        <option value="G">G</option>
+                        <option value="G#">G#</option>
+                        <option value="A">A</option>
+                        <option value="A#">A#</option>
+                        <option value="B">B</option>
+                    </select>
+                    
+                    <label for="chordType" style="margin-left: 10px;">Chord Type:</label>
+                    <select id="chordType">
+                        <option value="maj">Major</option>
+                        <option value="min">Minor</option>
+                        <option value="7">Dominant 7th</option>
+                        <option value="maj7">Major 7th</option>
+                        <option value="min7">Minor 7th</option>
+                        <option value="dim">Diminished</option>
+                    </select>
+                </div>
+                
+                <div style="margin-top: 10px;">
+                    <label for="chordDuration">Duration (s):</label>
+                    <input type="number" id="chordDuration" value="1.0" min="0.1" max="5" step="0.1">
+                    
+                    <label for="chordVolume" style="margin-left: 10px;">Volume (dB):</label>
+                    <input type="range" id="chordVolume" min="-40" max="0" value="-15" step="1">
+                    <span id="volumeValue">-15 dB</span>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <h4>Common Progressions:</h4>
+                    <div class="chord-progression">
+                        <button class="chord-prog-button" data-prog="I-IV-V-I">I-IV-V-I</button>
+                        <button class="chord-prog-button" data-prog="ii-V-I">ii-V-I</button>
+                        <button class="chord-prog-button" data-prog="I-V-vi-IV">I-V-vi-IV</button>
+                        <button class="chord-prog-button" data-prog="i-VI-III-VII">i-VI-III-VII</button>
+                        <button class="chord-prog-button" data-prog="I-vi-ii-V">I-vi-ii-V</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Log</h3>
+            <div id="log"></div>
+            <button id="clearLog">Clear Log</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const initButton = document.getElementById('initButton');
+        const playChordButton = document.getElementById('playChordButton');
+        const playProgressionButton = document.getElementById('playProgressionButton');
+        const stopButton = document.getElementById('stopButton');
+        const clearLogButton = document.getElementById('clearLog');
+        const statusSpan = document.getElementById('status');
+        const logDiv = document.getElementById('log');
+        const rootNoteSelect = document.getElementById('rootNote');
+        const chordTypeSelect = document.getElementById('chordType');
+        const chordDurationInput = document.getElementById('chordDuration');
+        const chordVolumeInput = document.getElementById('chordVolume');
+        const volumeValueSpan = document.getElementById('volumeValue');
+        const chordProgButtons = document.querySelectorAll('.chord-prog-button');
+
+        // Audio components
+        let synth;
+        let isInitialized = false;
+        
+        // Chord definitions
+        const chordIntervals = {
+            'maj': [0, 4, 7],
+            'min': [0, 3, 7],
+            '7': [0, 4, 7, 10],
+            'maj7': [0, 4, 7, 11],
+            'min7': [0, 3, 7, 10],
+            'dim': [0, 3, 6]
+        };
+        
+        // Scale degrees for progressions (0 = tonic, 2 = supertonic, etc.)
+        const scaleDegrees = {
+            'I': { type: 'maj', degree: 0 },
+            'ii': { type: 'min', degree: 2 },
+            'iii': { type: 'min', degree: 4 },
+            'IV': { type: 'maj', degree: 5 },
+            'V': { type: 'maj', degree: 7 },
+            'vi': { type: 'min', degree: 9 },
+            'vii°': { type: 'dim', degree: 11 },
+            'i': { type: 'min', degree: 0 },
+            'III': { type: 'maj', degree: 3 },
+            'v': { type: 'min', degree: 7 },
+            'VI': { type: 'maj', degree: 8 },
+            'VII': { type: 'maj', degree: 10 }
+        };
+        
+        // Note names for calculating chord notes
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+        // Logging function
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Initialize audio context and synth
+        async function initAudio() {
+            if (isInitialized) return;
+            
+            try {
+                // Create and connect the synth
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    envelope: {
+                        attack: 0.1,
+                        decay: 0.3,
+                        sustain: 0.5,
+                        release: 0.8
+                    },
+                    oscillator: {
+                        type: 'sine'
+                    }
+                }).toDestination();
+                
+                synth.volume.value = parseFloat(chordVolumeInput.value);
+                
+                isInitialized = true;
+                statusSpan.textContent = 'Audio ready';
+                statusSpan.style.color = 'green';
+                
+                // Enable buttons
+                playChordButton.disabled = false;
+                playProgressionButton.disabled = false;
+                stopButton.disabled = false;
+                
+                log('Audio context and synth initialized');
+            } catch (error) {
+                log(`Error initializing audio: ${error.message}`);
+                console.error('Audio initialization error:', error);
+            }
+        }
+
+        // Get notes for a chord
+        function getChordNotes(root, type, octave = 4) {
+            const rootIndex = noteNames.indexOf(root);
+            const intervals = chordIntervals[type] || [0, 4, 7];
+            
+            return intervals.map(interval => {
+                const noteIndex = (rootIndex + interval) % 12;
+                const noteOctave = octave + Math.floor((rootIndex + interval) / 12);
+                return `${noteNames[noteIndex]}${noteOctave}`;
+            });
+        }
+        
+        // Play a chord
+        function playChord() {
+            if (!isInitialized) return;
+            
+            const root = rootNoteSelect.value;
+            const type = chordTypeSelect.value;
+            const duration = parseFloat(chordDurationInput.value);
+            
+            const notes = getChordNotes(root, type);
+            
+            try {
+                synth.triggerAttackRelease(notes, duration);
+                log(`Playing ${root}${type} chord: ${notes.join(' ')}`);
+            } catch (error) {
+                log(`Error playing chord: ${error.message}`);
+                console.error('Chord playback error:', error);
+            }
+        }
+        
+        // Play a chord progression
+        async function playProgression(progressionStr = 'I-IV-V-I') {
+            if (!isInitialized) return;
+            
+            const root = rootNoteSelect.value;
+            const duration = parseFloat(chordDurationInput.value);
+            const rootIndex = noteNames.indexOf(root);
+            
+            // Parse progression string (e.g., "I-IV-V-I")
+            const progression = progressionStr.split('-');
+            log(`Playing progression: ${progression.join(' - ')} in ${root} major`);
+            
+            // Schedule each chord in the progression
+            const now = Tone.now();
+            const timePerChord = duration * 1.2; // Slight pause between chords
+            
+            progression.forEach((chordSymbol, i) => {
+                const chordInfo = scaleDegrees[chordSymbol] || scaleDegrees['I'];
+                const chordRootIndex = (rootIndex + chordInfo.degree) % 12;
+                const chordRoot = noteNames[chordRootIndex];
+                const octave = 4 + Math.floor((rootIndex + chordInfo.degree) / 12);
+                
+                const notes = getChordNotes(chordRoot, chordInfo.type, octave);
+                const startTime = now + (i * timePerChord);
+                
+                synth.triggerAttackRelease(notes, duration, startTime);
+                log(`  [${startTime.toFixed(2)}s] ${chordSymbol}: ${notes.join(' ')}`);
+            });
+        }
+        
+        // Stop all sounds
+        function stopAllSounds() {
+            if (!isInitialized) return;
+            
+            try {
+                synth.releaseAll();
+                log('Stopped all sounds');
+            } catch (error) {
+                log(`Error stopping sounds: ${error.message}`);
+                console.error('Stop sounds error:', error);
+            }
+        }
+
+        // Event Listeners
+        initButton.addEventListener('click', async () => {
+            log('Initializing audio...');
+            await initAudio();
+        });
+        
+        playChordButton.addEventListener('click', playChord);
+        playProgressionButton.addEventListener('click', () => playProgression('I-IV-V-I'));
+        stopButton.addEventListener('click', stopAllSounds);
+        
+        // Handle chord progression buttons
+        chordProgButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const progression = button.getAttribute('data-prog');
+                playProgression(progression);
+            });
+        });
+        
+        clearLogButton.addEventListener('click', () => {
+            logDiv.textContent = '';
+        });
+        
+        // Update volume when slider changes
+        chordVolumeInput.addEventListener('input', () => {
+            if (isInitialized) {
+                synth.volume.value = parseFloat(chordVolumeInput.value);
+            }
+            volumeValueSpan.textContent = `${chordVolumeInput.value} dB`;
+        });
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAllSounds();
+            }
+        });
+        
+        // Initial log
+        log('Page loaded. Click "Initialize Audio" to start.');
+    </script>
+</body>
+</html>

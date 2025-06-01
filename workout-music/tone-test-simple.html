@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tone.js Audio Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Tone.js Audio Test</h1>
+    <p>This page will help us determine if Tone.js audio is working on your system.</p>
+    
+    <div id="status">Click the button below to start the test.</div>
+    
+    <button id="startButton">Start Audio Test</button>
+    <button id="testTone" disabled>Play Test Tone</button>
+    
+    <div id="testResults"></div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const startButton = document.getElementById('startButton');
+        const testToneButton = document.getElementById('testTone');
+        const testResults = document.getElementById('testResults');
+        
+        // Create a synth
+        const synth = new Tone.Synth().toDestination();
+        let audioStarted = false;
+        
+        // Update status function
+        function updateStatus(message, isError = false) {
+            statusEl.textContent = message;
+            statusEl.className = isError ? 'error' : 'success';
+            console.log(message);
+        }
+        
+        // Start audio context on user interaction
+        startButton.addEventListener('click', async () => {
+            try {
+                updateStatus('Starting audio context...');
+                await Tone.start();
+                audioStarted = true;
+                updateStatus('Audio context started successfully!');
+                testToneButton.disabled = false;
+                startButton.disabled = true;
+                
+                // Log audio context details
+                console.log('Audio context state:', Tone.context.state);
+                console.log('Sample rate:', Tone.context.sampleRate);
+                console.log('Current time:', Tone.now());
+                
+            } catch (error) {
+                updateStatus('Error starting audio: ' + error.message, true);
+                console.error('Audio start error:', error);
+            }
+        });
+        
+        // Play a test tone
+        testToneButton.addEventListener('click', () => {
+            if (!audioStarted) {
+                updateStatus('Please start the audio context first', true);
+                return;
+            }
+            
+            updateStatus('Playing test tone...');
+            
+            // Play a simple scale
+            const now = Tone.now();
+            synth.triggerAttackRelease('C4', '8n', now);
+            synth.triggerAttackRelease('E4', '8n', now + 0.5);
+            synth.triggerAttackRelease('G4', '8n', now + 1.0);
+            synth.triggerAttackRelease('C5', '4n', now + 1.5);
+            
+            updateStatus('Test tone sequence completed!');
+        });
+        
+        // Check for audio context state changes
+        if (Tone.context) {
+            Tone.context.onstatechange = () => {
+                console.log('Audio context state changed to:', Tone.context.state);
+                updateStatus(`Audio context state: ${Tone.context.state}`);
+            };
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celebration Music Generator with Phi</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .pattern-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Celebration Music Generator</h1>
+        <p>Generate and play celebration music patterns using Phi and Tone.js</p>
+        
+        <div class="controls">
+            <button id="generateBtn">Generate & Play</button>
+            <button id="stopBtn" disabled>Stop</button>
+        </div>
+        
+        <h3>Generated Pattern:</h3>
+        <div id="patternDisplay" class="pattern-display">
+            Click "Generate & Play" to create a music pattern
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="phi-music-generator.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const generateBtn = document.getElementById('generateBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const patternDisplay = document.getElementById('patternDisplay');
+
+            // Initialize audio context on first user interaction
+            const initAudio = async () => {
+                await Tone.start();
+                console.log('Audio is ready');
+                generateBtn.disabled = false;
+            };
+
+            // Initialize on first click
+            document.body.addEventListener('click', async () => {
+                await initAudio();
+                document.body.removeEventListener('click', arguments.callee);
+            }, { once: true });
+
+            generateBtn.addEventListener('click', async () => {
+                try {
+                    generateBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    
+                    // Generate and play the pattern
+                    const pattern = await window.phiMusic.playPattern();
+                    patternDisplay.textContent = JSON.stringify(pattern, null, 2);
+                    
+                } catch (error) {
+                    console.error('Error generating music:', error);
+                    patternDisplay.textContent = `Error: ${error.message}`;
+                    generateBtn.disabled = false;
+                    stopBtn.disabled = true;
+                }
+            });
+
+            stopBtn.addEventListener('click', () => {
+                window.phiMusic.stop();
+                generateBtn.disabled = false;
+                stopBtn.disabled = true;
+            });
+        });
+    </script>
+</body>
+</html>
